@@ -1,10 +1,11 @@
 #!/bin/bash
-#SBATCH --mem=4G  # Request 16GB of memory
-#SBATCH --cpus-per-task=1  # Request 8 CPUs per task
-#SBATCH --time=01:00:00  # Request a walltime of 24 hours
+#SBATCH --mem=4G  # Request 4GB of memory
+#SBATCH --cpus-per-task=1  # Request 1 CPUs per task
+#SBATCH --time=02:00:00  # Request a walltime of 2 hours
 #SBATCH --cpus-per-task=1
-#SBATCH --array=1-20%10  # Set up a job array
-#SBATCH --output=qFit_testset._stdout
+#SBATCH --array=1-20%10  # Set up a job array with the number of PDBs you have
+#SBATCH --output=bioinformatics._stdout # Set up an output file with 
+
 
 #__________________SOURCE PHENIX/QFIT________________________________________________#
 source /dors/wankowicz_lab/phenix-installer-dev-5366-intel-linux-2.6-x86_64-centos6/phenix-dev-5366/phenix_env.sh
