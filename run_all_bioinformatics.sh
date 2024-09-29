@@ -46,8 +46,6 @@ mmtbx.validation_summary ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb > ${PDB}_
 
 ##HBOND
 python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/calc_hbond_alt.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb
-python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/plot_hbond_contactmap.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb ${PDB}_qFit_hbonds.csv
-
 
 ##DIHEDRAL
 python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/calc_dihedral.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb
@@ -63,7 +61,7 @@ python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/OP_to_bfactor.py ${PDB
 conda activate PE
 ##SASA
 python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/calc_sasa.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb
-python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/plot_sasa.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb
+
 
 
 
