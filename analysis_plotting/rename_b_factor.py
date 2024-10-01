@@ -18,7 +18,7 @@ def process_pdb(pdb_filename, df_full_filename, output_filename, column_name='OP
                 if residue.get_full_id()[3][0] != " ":
                     b = 0
                     
-                if column_name.isin(['s2calc', 'OP_Diff']):
+                if column_name in ['s2calc', 'OP_Diff']:
                     if residue.get_resname() in ['PRO', 'GLY']:
                         b = 0
                 else:
