@@ -17,8 +17,10 @@ def process_pdb(pdb_filename, df_full_filename, output_filename, column_name='OP
             for residue in chain:
                 if residue.get_full_id()[3][0] != " ":
                     b = 0
-                elif residue.get_resname() in ['PRO', 'GLY']:
-                    b = 0
+                    
+                if column_name.isin(['s2calc', 'OP_Diff']):
+                    if residue.get_resname() in ['PRO', 'GLY']:
+                        b = 0
                 else:
                     b = df[df['resi'] == int(residue.get_full_id()[3][1])][column_name].values
                     b = b[0] if len(b) > 0 else 0
@@ -35,7 +37,7 @@ if __name__ == "__main__":
     parser.add_argument("pdb_filename", help="Input PDB file")
     parser.add_argument("df_full_filename", help="Input CSV file with data")
     parser.add_argument("output_filename", help="Output PDB file")
-    parser.add_argument("--column_name", choices=['OP_Diff', 's2calc', 'Difference'], default='OP_Diff',
+    parser.add_argument("--column_name", default='OP_Diff',
                         help="Column name to use for B-factor (default: OP_Diff)")
 
     args = parser.parse_args()
