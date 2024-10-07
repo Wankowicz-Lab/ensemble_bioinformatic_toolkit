@@ -32,9 +32,23 @@ find_largest_ligand.py ${PDB_dir}/${PDB}/${PDB}_qFit.pdb ${PDB}
 lig=$(cat "${output_dir}/${PDB}_ligand_name.txt")
 echo $lig
 
+get_lig_chain_res.py ${PDB}.pdb $lig
+chain_resi=$(cat "${lig}_chain_resi.txt")
+#IFS=',' read -r chain resi <<< "$chain_resi"
 
-find_close_residues.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb ${PDB} ${lig} 5.0
-find_close_residues.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb ${PDB} ${lig} 10.0
+
+##get information on pocket
+conda activate PE
+fpocket -f ${PDB_dir}/${PDB}/${PDB}_qFit.pdb -r ${resi}:${lig}:${chain} -x
+
+python 
+
+
+#_______________________GET DISTANCE OF RESIDUES FROM LIGAND OF INTEREST___________________
+source /sb/sbgrid/programs/sbgrid.shrc
+
+pymol -c  /dors/wankowicz_lab/stephanie/script/bioinformatics/find_close_residues.py -- ${PDB_dir}/${PDB}/${PDB}_qFit.pdb ${resi} ${lig} ${chain} 5.0
+pymol -c  /dors/wankowicz_lab/stephanie/script/bioinformatics/find_close_residues.py -- ${PDB_dir}/${PDB}/${PDB}_qFit.pdb ${resi} ${lig} ${chain} 10.0
 
 
 python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/subset_output_apo.py ${PDB} ${apo_PDB} -dist 5.0 -qFit=N -lig ${lig}
