@@ -43,7 +43,6 @@ python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/single_parse_log.py ${
 ##VALIDATION SCRIPTS
 mmtbx.validation_summary ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb > ${PDB}_validation.txt
 
-
 ##HBOND
 python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/calc_hbond_alt.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb
 
@@ -56,12 +55,10 @@ calc_OP.py ${output_dir}/${PDB}.dat ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pd
 python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/OP_to_bfactor.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb ${output_dir}/${PDB}_OP.out ${output_dir}/${PDB}_OP.pdb --column_name s2calc
 
 
-
 #__________________ACTIVATE ANOTHER ENVIORNMENT________________________________________________#
 conda activate PE
 ##SASA
 python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/calc_sasa.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb
-
 
 
 
