@@ -13,6 +13,12 @@ def main():
 
     structure = freesasa.Structure(input_pdb)
     result = freesasa.calc(structure)
+    
+    print("Total : %.2f A2" % result.totalArea())
+    for key in area_classes:
+        print(key, ": %.2f A2" % area_classes[key])
+
+    
     result.write_pdb(output_pdb)
 
 if __name__ == "__main__":
