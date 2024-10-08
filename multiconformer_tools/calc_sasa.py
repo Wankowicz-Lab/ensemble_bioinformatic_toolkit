@@ -21,8 +21,7 @@ def compute_sasa(pdb_file):
             for residue in chain:
                 # Iterate over all altlocs of the residue
                 altlocs = {atom.get_altloc() for atom in residue}  # Get unique altlocs
-                #altlocs.discard(' ')  # Remove blank altlocs (if any)
-
+                
                 # Iterate through each atom in the residue
                 for atom in residue:
                     # Skip hydrogen atoms
