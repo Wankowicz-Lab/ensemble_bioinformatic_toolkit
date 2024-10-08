@@ -1,30 +1,74 @@
 import argparse
-import freesasa
+import pandas as pd
+from Bio.PDB import PDBParser
+from Bio.PDB.SASA import ShrakeRupley
 
-##THIS IS NOT WEIGHTED BY MULTICONF
+def compute_sasa(pdb_file):
+    # Initialize PDB parser and structure
+    parser = PDBParser(QUIET=True)
+    structure = parser.get_structure("PDB_structure", pdb_file)
+
+    # Initialize Shrake-Rupley for SASA calculation
+    sr = ShrakeRupley()
+    sr.compute(structure, level="A")  # Compute SASA at the atom level
+
+    # Prepare data for CSV output
+    sasa_data = []
+
+    # Iterate through all models, chains, and residues
+    for model in structure:
+        for chain in model:
+            for residue in chain:
+                # Iterate over all altlocs of the residue
+                altlocs = {atom.get_altloc() for atom in residue}  # Get unique altlocs
+                #altlocs.discard(' ')  # Remove blank altlocs (if any)
+
+                # Iterate through each atom in the residue
+                for atom in residue:
+                    # Skip hydrogen atoms
+                    if atom.get_name().startswith("H"):
+                        continue
+
+                    # Get the base SASA for the main altloc (usually ' ')
+                    base_sasa = round(atom.sasa, 2)
+
+                    # Record the SASA for the base altloc
+                    sasa_data.append({
+                        'Residue': residue.get_resname(),
+                        'Chain': chain.id,
+                        'Residue ID': residue.get_id()[1],
+                        'Atom': atom.get_name(),
+                        'Alt Loc': atom.get_altloc(),
+                        'SASA': base_sasa
+                    })
+
+                    # Check and record SASA for alternate conformations
+                    for altloc in altlocs:
+                        if altloc and atom.get_altloc() == altloc:
+                            # Get SASA for the atom with the current altloc
+                            sasa_value = round(atom.sasa, 2)
+                            sasa_data.append({
+                                'Residue': residue.get_resname(),
+                                'Chain': chain.id,
+                                'Residue ID': residue.get_id()[1],
+                                'Atom': atom.get_name(),
+                                'Alt Loc': altloc,
+                                'SASA': sasa_value
+                            })
+
+    # Convert to DataFrame and save to CSV
+    df = pd.DataFrame(sasa_data)
+    output_csv = pdb_file.replace('.pdb', '_sasa.csv')
+    df.to_csv(output_csv, index=False)
+    print(f'SASA values saved to {output_csv}')
 
 def main():
-    parser = argparse.ArgumentParser(description='Process PDB file and output PDB with SASA.')
-    parser.add_argument('input_pdb', type=str, help='Input PDB file')
+    # Set up argument parsing
+    parser = argparse.ArgumentParser(description='Calculate SASA for all atoms in a PDB file, excluding hydrogen atoms.')
+    parser.add_argument('pdb_file', type=str, help='Path to the PDB file')
     args = parser.parse_args()
 
-    input_pdb = args.input_pdb
-    output_pdb = input_pdb.replace('.pdb', '_sasa.pdb')
-
-    structure = freesasa.Structure(input_pdb)
-    result = freesasa.calc(structure)
-    area_classes = freesasa.classifyResults(result, structure)
-    print("Total : %.2f A2" % result.totalArea())
-    for key in area_classes:
-        print(key, ": %.2f A2" % area_classes[key])
-
-    selections = freesasa.selectArea(('alanine, resn ala', 'r1_10, resi 1-10', 'B_alt, altloc B'),
-                                 structure, result)
-    for key in selections:
-      print(key, ": %.2f A2" % selections[key])
-
-    result = freesasa.calc(structure)
-    result.write_pdb(output_pdb)
+    compute_sasa(args.pdb_file)
 
 if __name__ == "__main__":
     main()
