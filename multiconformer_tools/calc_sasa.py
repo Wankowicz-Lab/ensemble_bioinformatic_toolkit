@@ -29,10 +29,9 @@ def compute_sasa(pdb_file):
                     if atom.get_name().startswith("H"):
                         continue
 
-                    # Get the base SASA for the main altloc (usually ' ')
                     base_sasa = round(atom.sasa, 2)
 
-                    # Record the SASA for the base altloc
+                    # Record the SASA for the first altloc
                     sasa_data.append({
                         'Residue': residue.get_resname(),
                         'Chain': chain.id,
@@ -60,7 +59,6 @@ def compute_sasa(pdb_file):
     df = pd.DataFrame(sasa_data)
     output_csv = pdb_file.replace('.pdb', '_sasa.csv')
     df.to_csv(output_csv, index=False)
-    print(f'SASA values saved to {output_csv}')
 
 def main():
     # Set up argument parsing
