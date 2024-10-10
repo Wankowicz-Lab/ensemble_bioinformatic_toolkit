@@ -9,7 +9,7 @@ def parse_arguments():
     parser.add_argument("pdb_file", help="Input PDB file")
     parser.add_argument("ligand", help="Ligand of interest (e.g., 'HOH', 'ATP')")
     parser.add_argument("--cutoff", type=float, default=5.0, help="Distance cutoff in angstroms")
-    parser.add_argument("--output", default="interactions.csv", help="Output CSV file")
+    parser.add_argument("--output", default=None, help="Output CSV file")
     return parser.parse_args()
 
 three_to_one_dict = {
@@ -155,8 +155,8 @@ def main():
 
     # Save the interaction data to a CSV file
     df = pd.DataFrame(interactions)
-    df.to_csv(args.output, index=False)
-    print(f"Interaction data saved to {args.output}")
+    output_filename = args.pdb_file[:4] + "_interactions.csv"
+    df.to_csv(output_filename, index=False)
 
 if __name__ == "__main__":
     main()
