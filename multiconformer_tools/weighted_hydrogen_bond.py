@@ -29,7 +29,7 @@ def process_pdb(pdb_file):
     has_hydrogens = any(atom.element == 'H' for atom in protein + ligand)
 
     if not has_hydrogens:
-        return
+        return "Error: This model needs hydrogens added before hydrogen bonds can be identified."
     # Identify hydrogen bonds
     ns = NeighborSearch(protein + ligand)
     hbonds = []
@@ -40,12 +40,12 @@ def process_pdb(pdb_file):
             for donor_altloc in donor_altlocs:
                 potential_partners = ns.search(donor_altloc.coord, 3.6)  # 3.6 Angstrom cutoff
                 for partner in potential_partners:
-                    if partner.element in ['N', 'O', 'F']: #potential acceptor
+                    if partner.element in ['N', 'O', 'S']: #potential acceptor
                         acceptor_altlocs = get_altlocs(partner)
                         for acceptor_altloc in acceptor_altlocs:
                             distance = donor_altloc - acceptor_altloc
                             if 2.7 <= distance <= 3.6:
-                                print('distance is good.')
+                                #print('distance is good.')
                                 # Find hydrogens attached to the donor atom
                                 hydrogens = [atom for atom in donor_altloc.get_parent().get_atoms() if atom.element == 'H']
 
@@ -86,13 +86,11 @@ def process_pdb(pdb_file):
                                             'distance': distance,
                                             'angle': angle_degrees
                                         })
-                                        break  # We've found a valid hydrogen bond, no need to check other hydrogens
 
     # Create DataFrame and save to CSV
     df = pd.DataFrame(hbonds)
     output_file = os.path.splitext(os.path.basename(pdb_file))[0] + '_hbonds.csv'
     df.to_csv(output_file, index=False)
-    print(f"Hydrogen bond information saved to {output_file}")
 
 
 def get_altlocs(atom):
