@@ -38,27 +38,27 @@ b_fac=$(b_factor.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb --pdb=${PDB})
 phenix.rotalyze model=${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb outliers_only=False > ${output_dir}/${PDB}_rotamer_output.txt
 
 ## RFREE
-python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/single_parse_log.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.log  ${PDB}
+python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/multiconformer_tools/single_parse_log.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.log  ${PDB}
 
 ##VALIDATION SCRIPTS
 mmtbx.validation_summary ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb > ${PDB}_validation.txt
 
 ##HBOND
-python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/weighted_hydrogen_bond.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb
+python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/multiconformer_tools/weighted_hydrogen_bond.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb
 
 ##DIHEDRAL
-python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/calc_dihedral.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb
+python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/multiconformer_tools/calc_dihedral.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb
 
 #phenix.reduce -NOFLIP ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb > ${PDB}_qFit_H.pdb
 make_methyl_df.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb --pdb ${PDB}
 calc_OP.py ${output_dir}/${PDB}.dat ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb ${output_dir}/${PDB}_OP.out -r 1.5 -b $b_fac
-python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/OP_to_bfactor.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb ${output_dir}/${PDB}_OP.out ${output_dir}/${PDB}_OP.pdb --column_name s2calc
+python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/multiconformer_tools/OP_to_bfactor.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb ${output_dir}/${PDB}_OP.out ${output_dir}/${PDB}_OP.pdb --column_name s2calc
 
 
 #__________________ACTIVATE ANOTHER ENVIORNMENT________________________________________________#
 conda activate PE
 ##SASA
-python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/calc_sasa.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb
+python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/multiconformer_tools/calc_sasa.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb
 
 
 
