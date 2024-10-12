@@ -36,6 +36,8 @@ get_lig_chain_res.py ${PDB}.pdb $lig
 chain_resi=$(cat "${lig}_chain_resi.txt")
 #IFS=',' read -r chain resi <<< "$chain_resi"
 
+##____________RUN PLIP_____________________
+python 
 
 ##get information on pocket
 conda activate PE
