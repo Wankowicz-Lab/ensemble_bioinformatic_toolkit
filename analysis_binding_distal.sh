@@ -37,13 +37,12 @@ chain_resi=$(cat "${lig}_chain_resi.txt")
 #IFS=',' read -r chain resi <<< "$chain_resi"
 
 ##____________RUN PLIP_____________________
-python 
+python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/PLIP.py ${PDB_dir}/${PDB}/${PDB}_qFit.pdb ${lig}
 
 ##get information on pocket
 conda activate PE
 fpocket -f ${PDB_dir}/${PDB}/${PDB}_qFit.pdb -r ${resi}:${lig}:${chain} -x
 
-python 
 
 
 #_______________________GET DISTANCE OF RESIDUES FROM LIGAND OF INTEREST___________________
@@ -52,6 +51,7 @@ source /sb/sbgrid/programs/sbgrid.shrc
 pymol -c  /dors/wankowicz_lab/stephanie/script/bioinformatics/find_close_residues.py -- ${PDB_dir}/${PDB}/${PDB}_qFit.pdb ${resi} ${lig} ${chain} 5.0
 pymol -c  /dors/wankowicz_lab/stephanie/script/bioinformatics/find_close_residues.py -- ${PDB_dir}/${PDB}/${PDB}_qFit.pdb ${resi} ${lig} ${chain} 10.0
 
+#LOOK UP MATCHING APO
 
 python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/subset_output_apo.py ${PDB} ${apo_PDB} -dist 5.0 -qFit=N -lig ${lig}
 python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/subset_output_apo.py ${PDB} ${apo_PDB} -dist 10.0 -qFit=N -lig ${lig}
