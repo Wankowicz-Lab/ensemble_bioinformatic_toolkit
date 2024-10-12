@@ -7,7 +7,6 @@
 #SBATCH --output=bioinformatics._stdout   # Set up with the output you want. 
 
 
-
 #__________________SOURCE PHENIX/QFIT________________________________________________#
 source /dors/wankowicz_lab/phenix-installer-dev-5366-intel-linux-2.6-x86_64-centos6/phenix-dev-5366/phenix_env.sh
 export PHENIX_OVERWRITE_ALL=true
@@ -17,15 +16,15 @@ conda activate qfit
 
 
 #________________PDB INFO__________________________________
-PDB_file=/dors/wankowicz_lab/stephanie/Kojetin_lab/qfit_pdbs.txt
-PDB_dir='/dors/wankowicz_lab/stephanie/Kojetin_lab/'
-output_dir='/dors/wankowicz_lab/stephanie/Kojetin_lab/output'
+apo_holo_pairs='/dors/wankowicz_lab/stephanie/apo_holo_dataset/apo_holo_pairs.csv'
+PDB_dir='/dors/wankowicz_lab/stephanie/apo_holo_dataset/'
+output_dir='/dors/wankowicz_lab/stephanie/apo_holo_dataset/output'
 
 category=''
 apo_pdb=''
 cd ${output_dir}
 
-PDB=$(cat $PDB_file | head -n $SLURM_ARRAY_TASK_ID | tail -n 1)
+PDB=$(cat $PDB_file | head -n $SLURM_ARRAY_TASK_ID | tail -n 4)
 echo $PDB
 
 find_largest_ligand.py ${PDB_dir}/${PDB}/${PDB}_qFit.pdb ${PDB}
@@ -49,7 +48,23 @@ source /sb/sbgrid/programs/sbgrid.shrc
 pymol -c  /dors/wankowicz_lab/stephanie/script/bioinformatics/find_close_residues.py -- ${PDB_dir}/${PDB}/${PDB}_qFit.pdb ${resi} ${lig} ${chain} 5.0
 pymol -c  /dors/wankowicz_lab/stephanie/script/bioinformatics/find_close_residues.py -- ${PDB_dir}/${PDB}/${PDB}_qFit.pdb ${resi} ${lig} ${chain} 10.0
 
-#LOOK UP MATCHING APO
 
-python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/subset_output_apo.py ${PDB} ${apo_PDB} -dist 5.0 -qFit=N -lig ${lig}
-python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/subset_output_apo.py ${PDB} ${apo_PDB} -dist 10.0 -qFit=N -lig ${lig}
+# Extract the relevant row for the current PDB
+apo_pdb=$(awk -F, -v pdb="$PDB" '$2 == pdb {print $1}' $apo_holo_pairs)
+
+if [ -n "$apo_pdb" ]; then
+    echo "Apo PDB: $apo_pdb"
+else
+    echo "No matching PDB found in apo_holo_pairs.csv for PDB: $PDB"
+    exit 1
+fi
+
+echo $apo_pdb
+
+conda activate qfit
+
+python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/subset_output_apo.py ${PDB} ${apo_pdb} -dist 5.0 -qFit=N -lig ${lig}
+python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/subset_output_apo.py ${PDB} ${apo_pdb} -dist 10.0 -qFit=N -lig ${lig}
+
+python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/subset_output_holo.py ${PDB} ${holo_pdb} -dist 5.0 -qFit=N -lig ${lig}
+python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/subset_output_holo.py ${PDB} ${holo_pdb} -dist 10.0 -qFit=N -lig ${lig}
