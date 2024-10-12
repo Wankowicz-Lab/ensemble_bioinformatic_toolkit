@@ -78,3 +78,4 @@ parser.add_argument('distance', type=float, help='Distance threshold in angstrom
 args = parser.parse_args()
 
 find_close_residues(args.pdb_file, args.residue_number, args.residue_name, args.chain, args.distance)
+
