@@ -52,7 +52,7 @@ python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/multiconformer_tools/c
 #phenix.reduce -NOFLIP ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb > ${PDB}_qFit_H.pdb
 make_methyl_df.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb --pdb ${PDB}
 calc_OP.py ${output_dir}/${PDB}.dat ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb ${output_dir}/${PDB}_OP.out -r 1.5 -b $b_fac
-python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/multiconformer_tools/OP_to_bfactor.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb ${output_dir}/${PDB}_OP.out ${output_dir}/${PDB}_OP.pdb --column_name s2calc
+python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/rename_b_factor.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb ${output_dir}/${PDB}_OP.out ${output_dir}/${PDB}_OP.pdb --column_name s2calc
 
 
 #__________________ACTIVATE ANOTHER ENVIORNMENT________________________________________________#
