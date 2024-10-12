@@ -43,8 +43,6 @@ python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/PLIP.py ${PDB_dir}/${P
 conda activate PE
 fpocket -f ${PDB_dir}/${PDB}/${PDB}_qFit.pdb -r ${resi}:${lig}:${chain} -x
 
-
-
 #_______________________GET DISTANCE OF RESIDUES FROM LIGAND OF INTEREST___________________
 source /sb/sbgrid/programs/sbgrid.shrc
 
