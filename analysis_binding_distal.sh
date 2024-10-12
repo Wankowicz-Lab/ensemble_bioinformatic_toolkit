@@ -48,7 +48,6 @@ source /sb/sbgrid/programs/sbgrid.shrc
 pymol -c  /dors/wankowicz_lab/stephanie/script/bioinformatics/find_close_residues.py -- ${PDB_dir}/${PDB}/${PDB}_qFit.pdb ${resi} ${lig} ${chain} 5.0
 pymol -c  /dors/wankowicz_lab/stephanie/script/bioinformatics/find_close_residues.py -- ${PDB_dir}/${PDB}/${PDB}_qFit.pdb ${resi} ${lig} ${chain} 10.0
 
-
 # Extract the relevant row for the current PDB
 apo_pdb=$(awk -F, -v pdb="$PDB" '$2 == pdb {print $1}' $apo_holo_pairs)
 
