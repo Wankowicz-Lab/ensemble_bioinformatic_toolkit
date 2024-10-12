@@ -44,7 +44,7 @@ python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/single_parse_log.py ${
 mmtbx.validation_summary ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb > ${PDB}_validation.txt
 
 ##HBOND
-python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/calc_hbond_alt.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb
+python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/weighted_hydrogen_bond.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb
 
 ##DIHEDRAL
 python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/calc_dihedral.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb
