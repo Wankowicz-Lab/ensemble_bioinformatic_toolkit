@@ -17,9 +17,10 @@ conda activate qfit
 
 #________________PDB INFO__________________________________
 
-PDB_file=/dors/wankowicz_lab/stephanie/Kojetin_lab/qfit_pdbs.txt ## FIX AS NEEDED
-PDB_dir='/dors/wankowicz_lab/stephanie/Kojetin_lab/'  ## FIX AS NEEDED
-output_dir='/dors/wankowicz_lab/stephanie/Kojetin_lab/output' ## FIX AS NEEDED
+PDB_file=/dors/wankowicz_lab/stephanie/apo_holo_dataset/pdbs.txt ## FIX AS NEEDED
+PDB_dir='/dors/wankowicz_lab/stephanie/apo_holo_dataset/'  ## FIX AS NEEDED
+output_dir='/dors/wankowicz_lab/stephanie/apo_holo_dataset/output' ## FIX AS NEEDED
+
 
 cd ${output_dir}
 
