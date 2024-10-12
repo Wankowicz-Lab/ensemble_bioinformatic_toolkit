@@ -9,7 +9,8 @@ import argparse
 def process_pdb(pdb_filename, df_full_filename, output_filename, column_name='OP_Diff'):
     structure = Bio.PDB.PDBParser().get_structure('structure', pdb_filename)
     df_full = pd.read_csv(df_full_filename, index_col=None, sep=',', header=0)
-
+    print(df_full.head())
+    print(column_name)
     for model in structure:
         for chain in model:
             df = df_full[df_full['chain'] == chain.get_id()]
@@ -17,13 +18,12 @@ def process_pdb(pdb_filename, df_full_filename, output_filename, column_name='OP
             for residue in chain:
                 if residue.get_full_id()[3][0] != " ":
                     b = 0
-                    
-                if column_name in ['s2calc', 'OP_Diff']:
-                    if residue.get_resname() in ['PRO', 'GLY']:
+
+                if column_name in ['s2calc', 'OP_Diff'] and residue.get_resname() in ['PRO', 'GLY']:
                         b = 0
                 else:
-                    b = df[df['resi'] == int(residue.get_full_id()[3][1])][column_name].values
-                    b = b[0] if len(b) > 0 else 0
+                   b = df[df['resi'] == int(residue.get_full_id()[3][1])][column_name]#[0] 
+                   b = b.iloc[0] if not b.empty else 0.0
 
                 for atom in residue.get_unpacked_list():
                     atom.set_bfactor(b)
@@ -41,6 +41,3 @@ if __name__ == "__main__":
                         help="Column name to use for B-factor (default: OP_Diff)")
 
     args = parser.parse_args()
-
-    process_pdb(args.pdb_filename, args.df_full_filename, args.output_filename, args.column_name)
-
