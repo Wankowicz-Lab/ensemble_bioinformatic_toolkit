@@ -374,8 +374,6 @@ def calculate_chi_angles(pdb_file, output_csv):
 
     for model in structure:
         for chain in model:
-            for res in chain:
-                print(res.get_id())
             for residue in chain: 
                 resname = residue.resname
                 # Skip water residues
@@ -391,15 +389,12 @@ def calculate_chi_angles(pdb_file, output_csv):
                 altlocs = set()
                 atoms = residue.get_unpacked_list()
                 for atom in atoms:
-                    print(atom)
                     altloc = atom.get_altloc() or ' '
                     altlocs.add(altloc) 
 
                 if len(altlocs) == 1:  # Single altloc
                     altloc = altlocs.pop()  # Get the single altloc
                     # Perform calculations directly
-                    print(resnum)
-                    print('single!')
                     calculate_angles_for_residue(chain, residue, resname, resnum, altloc, chi_angles, backbone_dihedrals)
                 else:  # Multiple altlocs
                     for altloc in altlocs:
