@@ -1,5 +1,6 @@
 import argparse
 import csv
+import os
 from pymol import cmd
 
 ## THIS SCRIPT REQUIRES PYMOL. SOURCE IT USING: source /sb/sbgrid/programs/sbgrid.shrc
@@ -17,11 +18,10 @@ def get_min_distance(sel1, sel2):
 
 def find_close_residues(pdb_file, residue_number, residue_name, chain, distance):
     # Load the PDB file
-    print(f"Loading PDB file: {pdb_file}")
     cmd.load(pdb_file)
 
-    # Get the PDB ID from the filename (without extension)
-    pdb_id = pdb_file.rsplit('.', 1)[0]
+    # Get the PDB ID 
+    pdb_id = os.path.basename(pdb_file).rsplit('.', 1)[0]
 
     # Define the selection for the target residue using resi and chain
     target_selection = f'chain {chain} and resi {residue_number}'
@@ -33,7 +33,7 @@ def find_close_residues(pdb_file, residue_number, residue_name, chain, distance)
     cmd.select('close_residues', f'byres all within {distance} of target_residue')
 
     # Prepare to write the output to a CSV file
-    output_file = f"{pdb_id}_{residue_name}_{distance}_closeres.csv"
+    output_file = os.path.join(os.getcwd(), f"{pdb_id}_{residue_name}_{distance}_closeres.csv")
 
     with open(output_file, mode='w', newline='') as csvfile:
         csv_writer = csv.writer(csvfile)
@@ -78,4 +78,3 @@ parser.add_argument('distance', type=float, help='Distance threshold in angstrom
 args = parser.parse_args()
 
 find_close_residues(args.pdb_file, args.residue_number, args.residue_name, args.chain, args.distance)
-
