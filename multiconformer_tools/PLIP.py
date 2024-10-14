@@ -1,6 +1,7 @@
 import argparse
 from Bio.PDB import PDBParser, NeighborSearch, is_aa
 from Bio.PDB.Selection import unfold_entities
+import os
 import numpy as np
 import pandas as pd
 
@@ -149,14 +150,15 @@ def main():
         return
 
     residues = get_residues_within_cutoff(structure, ligand_atoms, args.cutoff)
-    print(f"Found {len(residues)} residues within {args.cutoff} angstroms of the ligand {args.ligand}")
 
     interactions = analyze_interactions(ligand_atoms, residues)
+    pdb_id = os.path.basename(args.pdb_file).rsplit('.', 1)[0]
 
     # Save the interaction data to a CSV file
     df = pd.DataFrame(interactions)
-    output_filename = args.pdb_file[:4] + "_interactions.csv"
+    output_filename = os.path.join(os.getcwd(), f"{pdb_id}_interactions.csv")
     df.to_csv(output_filename, index=False)
 
 if __name__ == "__main__":
     main()
+~          
