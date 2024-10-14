@@ -133,7 +133,7 @@ def analyze_interactions(ligand_atoms, residues):
                     "Residue": residue.get_resname() + str(residue.get_id()[1]),
                     "Residue Atom": residue_atom.get_name(),
                     "Ligand Atom": ligand_atom.get_name(),
-                    "Distance (Å)": round(distance, 2),
+                    "Distance (ang)": round(distance, 2),
                     "Interaction": interaction_type
                 })
     return interaction_data
