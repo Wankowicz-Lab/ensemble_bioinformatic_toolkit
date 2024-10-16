@@ -56,6 +56,7 @@ def compute_sasa(pdb_file):
 
     # Convert to DataFrame and save to CSV
     df = pd.DataFrame(sasa_data)
+    df = df.drop_duplicates()  # Remove duplicate rows
     output_csv = pdb_file.replace('.pdb', '_sasa.csv')
     df.to_csv(output_csv, index=False)
 
