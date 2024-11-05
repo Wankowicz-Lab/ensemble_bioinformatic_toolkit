@@ -9,11 +9,12 @@ output_file="/dors/wankowicz_lab/stephanie/RT/RT_temperature.csv"
 echo "PDB,temp" > "$output_file"
 
 cd ${base_dir}
-for pdb_id in PDB_file; do
+while read -r pdb_id; do
+    echo ${pdb_id}
     cd ${pdb_id}
     temp=$(grep "REMARK 200  TEMPERATURE           (KELVIN) :" "$pdb_file" | awk '{print $NF}')        
     if [[ ! -z "$temp" ]]; then
         # Append the PDB ID and temperature to the output file
         echo "$pdb_id,$temp" >> "$output_file"
     fi
-done
+done < "$PDB_file"
