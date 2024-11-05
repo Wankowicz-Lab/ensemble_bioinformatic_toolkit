@@ -11,7 +11,7 @@ base_dir='/dors/wankowicz_lab/stephanie/kemp_elim/'
 file_name='kemp'
 
 cd ${base_dir}
-echo 'PDB' 'Resolution' 'SpaceGroup' 'UnitCell_L1' 'UnitCell_L2' 'UnitCell_L3' 'UnitCell_A1' 'UnitCell_A2' 'UnitCell_A3' 'Lig' 'qFit_Rwork' 'qFit_Rfree' 'Chain_A_Seq' 'Chain_A_Res' 'Chain_B_Seq' 'Chain_A_Res'  >> ${base_dir}/${file_name}_space_unit_reso.txt
+echo 'PDB' 'Resolution' 'SpaceGroup' 'UnitCell_L1' 'UnitCell_L2' 'UnitCell_L3' 'UnitCell_A1' 'UnitCell_A2' 'UnitCell_A3' 'qFit_Rwork' 'qFit_Rfree' 'Lig' 'Chain1' 'Chain_A_Seq' 'Chain_A_Res' 'Chain2' 'Chain_B_Seq' 'Chain_A_Res'  >> ${base_dir}/${file_name}_space_unit_reso.txt
 
 
 for i in {1..47}; do
