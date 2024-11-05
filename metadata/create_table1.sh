@@ -11,7 +11,7 @@ base_dir='/dors/wankowicz_lab/stephanie/kemp_elim/'
 file_name='kemp'
 
 cd ${base_dir}
-echo 'PDB' 'Resolution' 'SpaceGroup' 'UnitCell_L1' 'UnitCell_L2' 'UnitCell_L3' 'UnitCell_A1' 'UnitCell_A2' 'UnitCell_A3'  'qFit_Rwork' 'qFit_Rfree' 'Chain_A_Seq' 'Chain_A_Res' 'Chain_B_Seq' 'Chain_A_Res'  >> ${base_dir}/${file_name}_space_unit_reso.txt
+echo 'PDB' 'Resolution' 'SpaceGroup' 'UnitCell_L1' 'UnitCell_L2' 'UnitCell_L3' 'UnitCell_A1' 'UnitCell_A2' 'UnitCell_A3' 'Lig' 'qFit_Rwork' 'qFit_Rfree' 'Chain_A_Seq' 'Chain_A_Res' 'Chain_B_Seq' 'Chain_A_Res'  >> ${base_dir}/${file_name}_space_unit_reso.txt
 
 
 for i in {1..47}; do
@@ -26,7 +26,8 @@ for i in {1..47}; do
   python /dors/wankowicz_lab/stephanie/script/single_parse_log.py ${base_dir}/${PDB}/${PDB}_qFit.log  ${PDB}
   log_file="${base_dir}/${PDB}_rvalues.csv"
   read -r log_info < <(tail -n +2 "$log_file" | head -n 1)
-  IFS=',' read -r pdb_rwork pdb_rfree <<< "$log_info"  # Split the CSV into variables  
+  echo $log_info
+  IFS=',' read -r pdb_id pdb_rwork pdb_rfree <<< "$log_info"  # Split the CSV into variables  
 
   if [ -z "$pdb_rwork" ]; then
     pdb_rwork="no_rwork"
@@ -35,7 +36,6 @@ for i in {1..47}; do
   if [ -z "$pdb_rfree" ]; then
     pdb_rwork="no_rfree"
   fi
-
   find_largest_ligand.py ${base_dir}/${PDB}/${PDB}.pdb ${PDB}
   lig=$(cat "${base_dir}/${PDB}_ligand_name.txt")
   if [ -z "$lig" ]; then
