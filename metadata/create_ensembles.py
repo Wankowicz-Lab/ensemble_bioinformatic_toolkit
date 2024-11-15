@@ -25,11 +25,12 @@ output_dir = args.dir
 protease = args.protease
 seq = args.seq
 ref_pdb = args.ref_pdb
-ref_chain = args.ref_chain
+ref_chains = args.ref_chain
 
 
 summary = search.query_pdb.query_by_sequence(sequences=[seq], label=protease,macromolecule_name=None, seq_id=0.95,xray_only=True, evalue=10,pairwise_align_options = {'alignment_type':"local",'gap_open_score':-0.5, 'gap_extend_score':-0.1},output_dir=output_dir,min_length=50)
 data = search.get_data.get_pdb_data(f'{output_dir}/seq_search_output_{protease}.csv', label=protease)
+print(args.organism)
 organism_list = [args.organism]
 
 data = refine.filter.filter_pdb_data(summary_report_csv=f'{output_dir}/summary_report_{protease}.csv'
