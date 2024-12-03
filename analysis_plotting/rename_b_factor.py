@@ -41,3 +41,4 @@ if __name__ == "__main__":
                         help="Column name to use for B-factor (default: OP_Diff)")
 
     args = parser.parse_args()
+    process_pdb(args.pdb_filename, args.df_full_filename, args.output_filename, column_name=args.column_name)
