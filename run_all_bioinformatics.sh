@@ -51,7 +51,7 @@ python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/multiconformer_tools/w
 python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/multiconformer_tools/calc_dihedral.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb
 
 #GET RESOLUTION
-mtzmetadata=`phenix.mtz.dump "${pdb_name}.mtz"`
+mtzmetadata=`phenix.mtz.dump "${PDB_dir}/${PDB}/${PDB}.mtz"`
 resrange=`grep "Resolution range:" <<< "${mtzmetadata}"`
 
 echo "${resrange}"
