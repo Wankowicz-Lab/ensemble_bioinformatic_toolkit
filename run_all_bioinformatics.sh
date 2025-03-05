@@ -50,11 +50,19 @@ python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/multiconformer_tools/w
 ##DIHEDRAL
 python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/multiconformer_tools/calc_dihedral.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb
 
-#phenix.reduce -NOFLIP ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb > ${PDB}_qFit_H.pdb
-make_methyl_df.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb --pdb ${PDB}
-calc_OP.py ${output_dir}/${PDB}.dat ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb ${output_dir}/${PDB}_OP.out -r 1.5 -b $b_fac
-python /dors/wankowicz_lab/ensemble_bioinformatic_toolkit/analysis_plotting/rename_b_factor.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb ${output_dir}/${PDB}_OP.out ${output_dir}/${PDB}_OP.pdb --column_name s2calc
+#GET RESOLUTION
+mtzmetadata=`phenix.mtz.dump "${pdb_name}.mtz"`
+resrange=`grep "Resolution range:" <<< "${mtzmetadata}"`
 
+echo "${resrange}"
+
+res=`echo "${resrange}" | cut -d " " -f 4 | cut -c 1-5`
+echo ${res}
+
+#RUN OP
+phenix.reduce -NOFLIP ${PDB_dir}/${PDB}/${category}/${PDB}_qFit.pdb > ${PDB}_qFit_H.pdb
+make_methyl_df.py ${PDB_dir}/${PDB}/${category}/${PDB}_qFit_H.pdb --pdb ${PDB}
+calc_OP.py ${output_dir}/${PDB}.dat ${PDB_dir}/${PDB}/${category}/${PDB}_qFit_H.pdb ${output_dir}/${PDB}_OP.out -r ${res} -b ${b_fac}
 
 #__________________ACTIVATE ANOTHER ENVIORNMENT________________________________________________#
 conda activate PE
