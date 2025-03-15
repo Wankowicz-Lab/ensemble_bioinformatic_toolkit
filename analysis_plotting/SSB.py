@@ -8,20 +8,16 @@ import matplotlib.pyplot as plt
 
 def get_args():
     parser = argparse.ArgumentParser(description="Bootstrap test to compare residue flexibility (s2calc_diff) between two groups of PDBs.")
-    series2 = [ 'x3677', 'x3675', 'x3707', 'x3694']
-    openers = [ 'x3631',  'x3460', 'x4393',
-    'x3458', 'x3439', 'x3466', 'x3476', 'x3623', 'x3422', 'x3924', 'x3406',
-    'x3410', 'x3459', 'x3481', 'x3233', 'x3844', 'x4037', 'x3402', 'x3465'
-]
-    series3 = ['x3638', 'x3769']
-    series4 = ['x3682', 'x2498', 'x4022', 'x4239', 'x3401', 'x4393', 'x3476', 'x3952']
-    series5 = ['x3871', 'x3928', 'x4393', 'x3870', 'x4034', 'x3753', 'x3928', 'x4371', 'x3885', 'x3867', 'x3522', 'x3888', 'x4160']
-    group_1_pdbs = series4
-    parser.add_argument('--order_all_A')
-    parser.add_argument("--n_iterations", type=int, default=1000, help="Number of bootstrap iterations (default 10000)")
+    parser.add_argument('--order_all_A', type=str, required=True, help="Path to the CSV file containing flexibility metrics.")
+    parser.add_argument('--group_1_pdbs', type=str, required=True, help="Comma-separated list of PDBs for Group 1.")
+    parser.add_argument("--n_iterations", type=int, default=1000, help="Number of bootstrap iterations (default 1000)")
     parser.add_argument("--alpha", type=float, default=0.05, help="Significance level for the confidence interval (default 0.05)")
+    
     args = parser.parse_args()
+    group_1_pdbs = args.group_1_pdbs.split(",")  # Convert comma-separated string into list
+    
     return args.order_all_A, group_1_pdbs, args.n_iterations, args.alpha
+
 
 def load_data(file_path):
     """Load the CSV containing the flexibility metrics for all PDBs."""
@@ -34,45 +30,39 @@ def split_groups(data, group_1_pdbs):
     group_b_data = data[~data['PDB'].isin(group_1_pdbs)]
     return group_1_data, group_b_data
 
-def bootstrap_resampling(group_1_residue_data, group_b_residue_data, n_iterations, residue, p_values):
-    """Perform bootstrap resampling to calculate confidence intervals and plot graphics."""
-    # === Step 1: Define Data ===
+def bootstrap_resampling(group_1_residue_data, group_b_residue_data, n_iterations):
+    """Perform bootstrap resampling to calculate confidence intervals."""
     np.random.seed(42)
+    
     group1 = np.array(group_1_residue_data)
     group2 = np.array(group_b_residue_data)
 
-    # === Step 2: Compute Actual T-Test ===
-    t_stat, real_p_value = stats.ttest_ind(group1, group2)
+    observed_t_stat, real_p_value = stats.ttest_ind(group1, group2, equal_var=False)
     print(f"Actual t-test p-value: {real_p_value}")
 
-    # === Step 3: Bootstrap Random T-Tests ===
-    num_bootstraps = n_iterations  # Number of resampling iterations
-    significant_count = 0  # Count of t-tests with p < 0.05
-    bootstrap_tstats = []  # Store t-statistics for each bootstrap
+    num_bootstraps = n_iterations
+    bootstrap_tstats = []
 
     combined_data = np.concatenate([group1, group2])
     n1 = len(group1)
 
     for _ in range(num_bootstraps):
-        np.random.shuffle(combined_data)  # Shuffle labels
+        np.random.shuffle(combined_data)  # Shuffle data for permutation test
         random_group1 = combined_data[:n1]
         random_group2 = combined_data[n1:]
         
-        t_stat, p_value = stats.ttest_ind(random_group1, random_group2)
+        t_stat, _ = stats.ttest_ind(random_group1, random_group2, equal_var=False)
         bootstrap_tstats.append(t_stat)
-        if p_value < 0.05:
-            significant_count += 1
 
-    # === Step 4: Compute Bootstrapped P-Value ===
-    bootstrapped_p_value = significant_count / num_bootstraps
-    print(f"Bootstrapped p-value: {bootstrapped_p_value}")
-
-    # === Step 5: Calculate Confidence Intervals ===
     lower_ci = np.percentile(bootstrap_tstats, 2.5)
     upper_ci = np.percentile(bootstrap_tstats, 97.5)
+
+    # Compute bootstrap p-value
+    bootstrapped_p_value = np.mean(np.abs(bootstrap_tstats) >= np.abs(observed_t_stat))
+
+    print(f"Bootstrapped p-value: {bootstrapped_p_value}")
     print(f"95% Confidence Interval for t-statistics: ({lower_ci}, {upper_ci})")
 
-    # Return the bootstrapped p-value and confidence intervals
     return lower_ci, upper_ci, bootstrapped_p_value
 
 def create_file(residues, p_values, corrected_p_values, reject, output_file, group_1_stats, group_b_stats, ttest_p_values):
