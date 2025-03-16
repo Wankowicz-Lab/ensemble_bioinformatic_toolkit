@@ -20,7 +20,7 @@ def plot_s2calc_diff_distribution(data, group_1_pdbs):
         
         # Iterate over each residue in the current PDB
         for residue in pdb_data['resi'].unique():
-            print(residue)
+            #print(residue)
             # Filter data for the current residue
             residue_data = pdb_data[pdb_data['resi'] == residue]['s2calc_diff']
             residue_data_all = group_1_data[group_1_data['resi'] == residue]['s2calc_diff']
@@ -40,7 +40,7 @@ def plot_s2calc_diff_distribution(data, group_1_pdbs):
             all_residue_data = group_1_data[group_1_data['resi'] == residue]['s2calc_diff']
             if not residue_data.empty:
                 z_scores_array = zscore(all_residue_data)
-                print(z_scores_array)
+                #print(z_scores_array)
                 # Find the index of the current residue in the full dataset
                 # Use the first index of residue_data to find the corresponding z-score
                 current_index = residue_data.index[0]
@@ -60,6 +60,15 @@ def plot_s2calc_diff_distribution(data, group_1_pdbs):
     
     return z_scores_df
 
+def plot_zscore_heatmap(z_scores_df):
+    """Plot a clustermap of the z-scores."""
+    plt.figure(figsize=(12, 8))
+    sns.clustermap(z_scores_df, cmap="coolwarm", fmt=".2f")
+    plt.xlabel("Residue")
+    plt.ylabel("PDB")
+    plt.savefig("z_scores_clustermap.png")
+    plt.close()
+
 # Load the data
 data = pd.read_csv('/Users/stephaniewanko/Downloads/vanderbilt/mac1/OP/order_all_A.csv')
 
@@ -69,18 +78,8 @@ group_1_pdbs = series5
 # Plot s2calc_diff distribution and calculate z-scores
 z_scores_df = plot_s2calc_diff_distribution(data, group_1_pdbs)
 
-def plot_zscore_heatmap(z_scores_df):
-    """Plot a heatmap of the z-scores."""
-    plt.figure(figsize=(12, 8))
-    sns.heatmap(z_scores_df, cmap="coolwarm", fmt=".2f")
-    plt.xlabel("Residue")
-    plt.ylabel("PDB")
-    plt.savefig("z_scores_heatmap.png")
-    plt.close()
-
 # Plot the z-scores heatmap
 plot_zscore_heatmap(z_scores_df)
-
 
 # Print the z-scores table
 print(z_scores_df)
