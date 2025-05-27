@@ -19,7 +19,7 @@ while IFS= read -r PDB || [[ -n $PDB ]]; do
     [[ -d $pdb_dir ]]        || { echo "⨯ dir $pdb_dir not found – skipping"; continue; }
     [[ -f $pdb_qfit ]]       || { echo "⨯ $pdb_qfit not found – skipping";  continue; }
 
-    phenix.pdbtools "$pdb" remove_alt_confs=True remove="chain B or water"
+    phenix.pdbtools "$pdb" remove_alt_confs=True remove="water"
 
     {
         echo "DIFFMODE OFF"
