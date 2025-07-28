@@ -19,6 +19,7 @@ def get_min_distance(sel1, sel2):
 def find_close_residues(pdb_file, residue_number, residue_name, chain, distance):
     cmd.reinitialize()
     cmd.load(pdb_file)
+    cmd.remove("hydro or resn HOH")
 
     pdb_id = os.path.basename(pdb_file).rsplit('.', 1)[0]
     target_selection = f'chain {chain} and resi {residue_number}'
