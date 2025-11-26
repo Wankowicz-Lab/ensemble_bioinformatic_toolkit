@@ -1,7 +1,8 @@
-# ensemble_bioinformatic_toolkit
-This is a collection of scripts that can be used on multiconformer or ensemble-based structural models. 
+# Ensemble Bioinformatic Toolkit 
+This is a collection of scripts for use with multiconformer or ensemble-based structural models. This contains scripts related to Seo et al 2025. 
+
+NOTE: DOCUMENTATION RELATED TO THESE SCRIPTS ARE STILL IN PROGRESS.
 
 The directory is partitioned into three portions:
-1) CL tools: These are wrapper scripts to run data tools and get initial information from PDBs.
-2) Multiconformer tools: These are scripts applied to get inforamtion from PDBs such as hydrogen bonds, SASA, close residues, ect.
-3) Analysis and plotting: These are scripts to analyze inforamtion from data tool and plot them. 
+1) Multiconformer tools: These are scripts applied to get information from PDBs, such as hydrogen bonds, SASA, close residues, etc.
+2) Analysis and plotting: These are scripts to analyze information from the data tool and plot it. 
