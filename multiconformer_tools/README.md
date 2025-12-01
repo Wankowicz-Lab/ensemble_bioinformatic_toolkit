@@ -1,15 +1,6 @@
 This folder contains scripts that can be used on multiconformer models. These models encode conformational heterogeneity using altlocs. If the PDB or mmCIF have multiple models, please use the ensemble scripts.
 
 
-Internally built tools:
-1) Hydrogen Bond
-2) Protein-ligand interactions 
-
-
-
-Externally built tools: 
-1) Order Parameters: https://github.com/ExcitedStates/qfit-3.0
-    - residue level metric of flexibility
 
 ## Comparing PDBs
 1) alpha_carbon_rmsd.py
