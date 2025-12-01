@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-H-bond graph analysis + mechanistic water replaceability 
+H-bond graph analysis
 """
 
 from __future__ import annotations
