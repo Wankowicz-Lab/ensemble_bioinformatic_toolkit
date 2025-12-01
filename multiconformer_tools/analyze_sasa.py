@@ -2,30 +2,13 @@
 """
 SASA comparison with per-PDB + per-cluster summaries.
 
-What it adds vs previous:
-- NEW: Per-PDB summary table with cluster attached (which PDBs become most exposed/buried).
-
-Inputs/Assumptions
-------------------
-- FreeSASA outputs in PDB format (per-atom SASA in B-factor).
-- Cluster CSV columns: PDB,ID,Affinity,Cluster  (ID like 'x3430')
-- Reference structure appears in filename (default: 7KQO).
-
-Outputs
--------
-- residue_sasa_changes_overall.csv         (per-residue vs ALL)
-- residue_sasa_changes_by_cluster.csv      (per-residue within cluster)
-- cluster_sasa_summary.csv                 (cluster-level exposure ranking)
-- pdb_sasa_summary.csv                     (NEW: per-PDB exposure summary + cluster)
-
 Usage
 -----
 python sasa_compare_with_cluster_summary.py \
   --sasa_dir results_freesasa \
-  --clusters_csv HBDScan_clusters_3ormore_normpdb.csv \
+  --clusters_csv HBDScan_clusters_3.csv \
   --ref 7KQO \
   --outdir sasa_out \
-  --topk 20
 """
 import argparse
 import re
@@ -53,7 +36,6 @@ boxplot_kwargs = dict({'boxprops': boxprops, 'medianprops': lineprops,
                        'whiskerprops': lineprops, 'capprops': lineprops,
                        'width': 0.75})
 
-# ---------- tiny helpers ----------
 def is_atom(line: str) -> bool:
     return line.startswith("ATOM  ") or line.startswith("HETATM")
 
@@ -83,9 +65,6 @@ def res_label(key) -> str:
     return f"{resn}{resi}{icode}:{chain}"
 
 def extract_id_from_name(name: str):
-    """
-    Prefer your 'x####' IDs; else accept classic 4-char PDB codes.
-    """
     m = re.search(r'(^|[^A-Za-z0-9])(x\d{4})([^A-Za-z0-9]|$)', name, flags=re.I)
     if m: return m.group(2).lower()
     m = re.search(r'(^|[^A-Za-z0-9])([0-9][A-Za-z0-9]{3})([^A-Za-z0-9]|$)', name)
@@ -117,10 +96,6 @@ def parse_residue_sasa_from_pdb(pdb_path: Path) -> dict:
 
 # ---------- core ----------
 def load_cluster_map(csv_path: Path) -> dict:
-    """
-    Expect columns: PDB,ID,Affinity,Cluster
-    Map: {ID -> Cluster}  (ID like 'x3430')
-    """
     df = pd.read_csv(csv_path)
     df["ID"] = df["ID"].astype(str).str.strip().str.lower()
     return {row.ID: str(row.Cluster) for _, row in df.iterrows()}
@@ -137,12 +112,6 @@ def find_ref_file(files: list, ref_id: str) -> Path:
     raise FileNotFoundError(f"Reference '{ref_id}' not found in: {[f.name for f in files][:10]} ...")
 
 def compare_vs_ref(files: list, ref_file: Path, id2cluster: dict):
-    """
-    Returns:
-      overall_df   : per-residue mean/|mean| deltas across ALL others
-      byclu_df     : per-residue mean/|mean| deltas within each cluster
-      pdb_summary  : NEW per-PDB summary (one row per PDB) + cluster
-    """
     ref = parse_residue_sasa_from_pdb(ref_file)
 
     # per-residue aggregations across all PDBs and by cluster
@@ -150,7 +119,6 @@ def compare_vs_ref(files: list, ref_file: Path, id2cluster: dict):
     byclu   = defaultdict(lambda: defaultdict(lambda: {"d_tot":[], "d_pol":[], "d_npl":[]}))
 
     # NEW: per-PDB aggregation structures
-    # sums across residues for each PDB (to characterize exposure/burial of that PDB vs ref)
     pdb_accum = {}  # pid -> dict of running sums/lists
 
     for f in files:
@@ -241,7 +209,7 @@ def compare_vs_ref(files: list, ref_file: Path, id2cluster: dict):
             })
     byclu_df = pd.DataFrame(rows).sort_values(["cluster","mean_abs_delta_total"], ascending=[True, False])
 
-    # ---- Build NEW per-PDB summary DF ----
+    # ---- Build per-PDB summary DF ----
     pdb_rows = []
     for pid, e in pdb_accum.items():
         n = max(e["residue_count"], 1)
@@ -306,14 +274,13 @@ def summarize_clusters(byclu_df: pd.DataFrame) -> pd.DataFrame:
     })).reset_index(drop=True)
     return summary.sort_values("net_positive_total", ascending=False)
 
-# ---------- CLI ----------
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--sasa_dir", required=True, help="Folder with FreeSASA PDB-formatted outputs")
     ap.add_argument("--clusters_csv", required=True, help="CSV with columns: PDB,ID,Affinity,Cluster")
     ap.add_argument("--ref", default="7KQO", help="Reference ID present in a filename (e.g., 7KQO or x3430)")
     ap.add_argument("--outdir", default="sasa_out")
-    ap.add_argument("--topk", type=int, default=20)
     args = ap.parse_args()
 
     sasa_dir = Path(args.sasa_dir); outdir = Path(args.outdir); outdir.mkdir(parents=True, exist_ok=True)
@@ -321,10 +288,6 @@ def main():
     if not files: raise SystemExit(f"No PDB-like files in {sasa_dir}")
     ref_file = find_ref_file(files, args.ref)
     id2cluster = load_cluster_map(Path(args.clusters_csv))
-
-    print(f"[info] Reference file: {ref_file.name}")
-    print(f"[info] Loaded {len(id2cluster)} cluster assignments from {args.clusters_csv}")
-
     overall_df, byclu_df, pdb_summary = compare_vs_ref(files, ref_file, id2cluster)
 
     # Save per-residue tables
@@ -341,60 +304,26 @@ def main():
     pdb_csv = outdir/"pdb_sasa_summary.csv"
     pdb_summary.to_csv(pdb_csv, index=False)
 
-    # ---- quick console summaries ----
-    k = min(args.topk, len(overall_df))
-    print("\n=== Top residues by mean |ΔSASA_total| (overall) ===")
-    print(overall_df[["residue","resname","chain","resi","mean_delta_total","mean_abs_delta_total","mean_delta_polar","mean_delta_nonpolar","n"]].head(k).to_string(index=False))
+      # --- Create boxplot ---
+      plt.figure(figsize=(12, 6))
+      ax = sns.boxplot(
+          data=pdb_summary,
+          x="cluster",
+          y="mean_delta_total",
+          palette="magma",
+          order=ordered_clusters,
+          width=0.6,
+          fliersize=2
+      )
+      ax.yaxis.grid(True, linestyle='-', which='major', color='gray', alpha=0.5)
 
-    if not byclu_df.empty:
-        print("\n=== Top residues by mean |ΔSASA_total| per cluster ===")
-        for clu, sub in byclu_df.groupby("cluster"):
-            kk = min(args.topk, len(sub))
-            print(f"\n[Cluster {clu}]")
-            print(sub[["residue","resname","chain","resi","mean_delta_total","mean_abs_delta_total","mean_delta_polar","mean_delta_nonpolar","n_in_cluster"]].head(kk).to_string(index=False))
+      plt.xlabel("Cluster")
+      plt.ylabel("Mean ΔSASA per PDB (Å²)")
+      plt.xticks(rotation=45)
+      plt.tight_layout()
 
-    if not cluster_summary.empty:
-        print("\n=== Cluster ranking by increased solvent exposure (net_positive_total) ===")
-        print(cluster_summary[["cluster","n_residues","net_positive_total","net_positive_polar","net_positive_nonpolar","mean_delta_total"]].to_string(index=False))
-        print(f"[info] Saved cluster summary to: {cluster_csv}")
-
-    if not pdb_summary.empty:
-        print("\n=== PDBs ranked by increased solvent exposure (net_positive_total) ===")
-        cols = ["pdb_id","cluster","residues_compared","net_positive_total","net_positive_polar","net_positive_nonpolar","net_delta_total","mean_delta_total"]
-        print(pdb_summary[cols].head(args.topk).to_string(index=False))
-        print(f"[info] Saved per-PDB summary to: {pdb_csv}")
-    else:
-        print("\n[warn] No per-PDB summary produced.")
-
-    print(f"\n[done] Wrote:\n - {overall_csv}\n - {byclu_csv}\n - {cluster_csv}\n - {pdb_csv}")
-
-    if "pdb_summary" in locals() and not pdb_summary.empty:
-        # Compute cluster order by mean ΔSASA
-        cluster_means = pdb_summary.groupby("cluster")["mean_delta_total"].mean().sort_values()
-        ordered_clusters = cluster_means.index.tolist()
-
-
-        # --- Create boxplot ---
-        plt.figure(figsize=(12, 6))
-        ax = sns.boxplot(
-            data=pdb_summary,
-            x="cluster",
-            y="mean_delta_total",
-            palette="magma",
-            order=ordered_clusters,
-            width=0.6,
-            fliersize=2
-        )
-        ax.yaxis.grid(True, linestyle='-', which='major', color='gray', alpha=0.5)
-
-        plt.xlabel("Cluster")
-        plt.ylabel("Mean ΔSASA per PDB (Å²)")
-        plt.xticks(rotation=45)
-        plt.tight_layout()
-
-        out_path = outdir / "cluster_mean_SASA_delta_total_boxplot.png"
-        plt.savefig(out_path, dpi=300)
-
+      out_path = "cluster_mean_SASA_delta_total_boxplot.png"
+      plt.savefig(out_path, dpi=300)
 
 
 if __name__ == "__main__":
