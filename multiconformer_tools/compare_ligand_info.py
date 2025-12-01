@@ -26,16 +26,13 @@ boxplot_kwargs = dict({'boxprops': boxprops, 'medianprops': lineprops,
 #read in affinity csv with variables, op or rmsf csv, resi close, with argpase
 
 # Read in the CSV files
-mac1_affinity_op_subsets = pd.read_csv('/Users/stephaniewanko/Downloads/vanderbilt/mac1/OP/mac1_affinity_op_subsets.csv')
+mac1_affinity_op_subsets = pd.read_csv('mac1_affinity_op_subsets.csv')
 merged_ligand_smiles_clusters = pd.read_csv('merged_ligand_smiles_clusters.csv')
-close_OP = pd.read_csv('avg_close_delta_rmsf.csv')
+close_RMSF = pd.read_csv('avg_close_delta_rmsf.csv')
+close_OP = pd.read_csv('avg_close_delta_OP.csv')
 # Read in the avg_OP.csv file
-all_OP = pd.read_csv('avg_delta_rmsf.csv')
-
-all_OP.rename(columns={'delta_RMSF': 's2calc_diff_all'}, inplace=True)
-close_OP.rename(columns={'delta_RMSF': 's2calc_diff_close'}, inplace=True)
-all_OP.rename(columns={'PDB_ensemble': 'PDB'}, inplace=True)
-close_OP.rename(columns={'PDB_ensemble': 'PDB'}, inplace=True)
+all_RMSF = pd.read_csv('avg_delta_rmsf.csv')
+all_OP = pd.read_csv('avg_delta_OP.csv')
 
 # Merge the avg_OP data with the existing merged_data on a common column, assuming 'PDB' is the common column
 merged_data = pd.merge(merged_ligand_smiles_clusters, all_OP, on='PDB')
@@ -53,81 +50,81 @@ column_name_map = {
 
 merged_data.rename(columns=column_name_map, inplace=True) 
 
-print(merged_data.head())
+
 # # Define the columns to plot
 columns_to_plot = ['Molecular Weight', 'logP', 'Hydrogen Bond Donors', 'Hydrogen Bond Acceptors',
                     'LogD', 'Polar Surface Area', 'Rotatable Bonds', 'Hydrogen Bonds/Molecular Weight']
 
 #Loop through each column and create a separate scatter plot for close_OP
-# for column in columns_to_plot:
-#     plt.figure(figsize=(8, 6))  # Create a new figure for each column
-#     sns.scatterplot(data=merged_data, x='s2calc_diff_close', y=column)
-#     regplot = sns.regplot(data=merged_data, x='s2calc_diff_close', y=column, scatter=False, color='red')  # Add best fit line
+for column in columns_to_plot:
+    plt.figure(figsize=(8, 6))  # Create a new figure for each column
+    sns.scatterplot(data=merged_data, x='s2calc_diff_close', y=column)
+    regplot = sns.regplot(data=merged_data, x='s2calc_diff_close', y=column, scatter=False, color='red')  # Add best fit line
     
-#     # Calculate and print regression line information
-#     slope, intercept = np.polyfit(merged_data['s2calc_diff_close'], merged_data[column], 1)
-#     correlation_matrix = np.corrcoef(merged_data['s2calc_diff_close'], merged_data[column])
-#     correlation_xy = correlation_matrix[0, 1]
-#     r_squared = correlation_xy**2
-#     p_value = stats.pearsonr(merged_data['s2calc_diff_close'], merged_data[column])[1]
-#     print(f'Regression line for {column} (close_OP): slope = {slope}, intercept = {intercept}, r^2 = {r_squared}, p-value = {p_value}')
+    # Calculate and print regression line information
+    slope, intercept = np.polyfit(merged_data['s2calc_diff_close'], merged_data[column], 1)
+    correlation_matrix = np.corrcoef(merged_data['s2calc_diff_close'], merged_data[column])
+    correlation_xy = correlation_matrix[0, 1]
+    r_squared = correlation_xy**2
+    p_value = stats.pearsonr(merged_data['s2calc_diff_close'], merged_data[column])[1]
+    print(f'Regression line for {column} (close_OP): slope = {slope}, intercept = {intercept}, r^2 = {r_squared}, p-value = {p_value}')
     
-#     plt.xlabel('OP Difference', fontsize=20)
-#     plt.ylabel(column, fontsize=20)
-#     plt.xticks(rotation=45, fontsize=20)
-#     plt.yticks(fontsize=20)
-#     plt.tight_layout()
-#     safe_col = column.replace(" ", "")
-#     plt.savefig(f'figure_out/scatter_s2calc_{safe_col}_close.png', dpi=300)
-#     plt.close()
+    plt.xlabel('OP Difference', fontsize=20)
+    plt.ylabel(column, fontsize=20)
+    plt.xticks(rotation=45, fontsize=20)
+    plt.yticks(fontsize=20)
+    plt.tight_layout()
+    safe_col = column.replace(" ", "")
+    plt.savefig(f'figure_out/scatter_s2calc_{safe_col}_close.png', dpi=300)
+    plt.close()
 
 
 #Loop through each column and create a separate scatter plot for avg_OP
-# for column in columns_to_plot:
-#     plt.figure(figsize=(8, 6))  # Create a new figure for each column
-#     sns.scatterplot(data=merged_data, x='s2calc_diff_all', y=column)
-#     regplot = sns.regplot(data=merged_data, x='s2calc_diff_all', y=column, scatter=False, color='red')  # Add best fit line
+for column in columns_to_plot:
+    plt.figure(figsize=(8, 6))  # Create a new figure for each column
+    sns.scatterplot(data=merged_data, x='s2calc_diff_all', y=column)
+    regplot = sns.regplot(data=merged_data, x='s2calc_diff_all', y=column, scatter=False, color='red')  # Add best fit line
     
-#     # Calculate and print regression line information
-#     slope, intercept = np.polyfit(merged_data['s2calc_diff_all'], merged_data[column], 1)
-#     correlation_matrix = np.corrcoef(merged_data['s2calc_diff_all'], merged_data[column])
-#     correlation_xy = correlation_matrix[0, 1]
-#     r_squared = correlation_xy**2
-#     p_value = stats.pearsonr(merged_data['s2calc_diff_all'], merged_data[column])[1]
-#     print(f'Regression line for {column} (avg_OP): slope = {slope}, intercept = {intercept}, r^2 = {r_squared}, p-value = {p_value}')
+    # Calculate and print regression line information
+    slope, intercept = np.polyfit(merged_data['s2calc_diff_all'], merged_data[column], 1)
+    correlation_matrix = np.corrcoef(merged_data['s2calc_diff_all'], merged_data[column])
+    correlation_xy = correlation_matrix[0, 1]
+    r_squared = correlation_xy**2
+    p_value = stats.pearsonr(merged_data['s2calc_diff_all'], merged_data[column])[1]
+    print(f'Regression line for {column} (avg_OP): slope = {slope}, intercept = {intercept}, r^2 = {r_squared}, p-value = {p_value}')
     
-#     plt.xlabel('OP Difference', fontsize=24)
-#     plt.ylabel(column, fontsize=24)
-#     plt.xticks(rotation=45, fontsize=20)
-#     plt.yticks(fontsize=20)
-#     plt.tight_layout()
-#     safe_col = column.replace(" ", "")
-#     plt.savefig(f'figure_out/scatter_s2calc_{safe_col}_all.png', dpi=300)
-#     plt.close()
+    plt.xlabel('OP Difference', fontsize=24)
+    plt.ylabel(column, fontsize=24)
+    plt.xticks(rotation=45, fontsize=20)
+    plt.yticks(fontsize=20)
+    plt.tight_layout()
+    safe_col = column.replace(" ", "")
+    plt.savefig(f'figure_out/scatter_s2calc_{safe_col}_all.png', dpi=300)
+    plt.close()
 
 
 sns.set(style="whitegrid")
 # Loop through each column and create a separate scatter plot
-# for column in columns_to_plot:
-#     plt.figure(figsize=(8, 6))  # Create a new figure for each column
-#     sns.scatterplot(data=merged_data, x='s2calc_diff_close', y=column)
-#     regplot = sns.regplot(data=merged_data, x='s2calc_diff_close', y=column, scatter=False, color='red')  # Add best fit line
+for column in columns_to_plot:
+    plt.figure(figsize=(8, 6))  # Create a new figure for each column
+    sns.scatterplot(data=merged_data, x='s2calc_diff_close', y=column)
+    regplot = sns.regplot(data=merged_data, x='s2calc_diff_close', y=column, scatter=False, color='red')  # Add best fit line
     
-#     # Calculate and print regression line information
-#     slope, intercept = np.polyfit(merged_data['s2calc_diff_close'], merged_data[column], 1)
-#     correlation_matrix = np.corrcoef(merged_data['s2calc_diff_close'], merged_data[column])
-#     correlation_xy = correlation_matrix[0, 1]
-#     r_squared = correlation_xy**2
-#     p_value = stats.pearsonr(merged_data['s2calc_diff_close'], merged_data[column])[1]
-#     print(f'Regression line for {column}: slope = {slope}, intercept = {intercept}, r^2 = {r_squared}, p-value = {p_value}')
+    # Calculate and print regression line information
+    slope, intercept = np.polyfit(merged_data['s2calc_diff_close'], merged_data[column], 1)
+    correlation_matrix = np.corrcoef(merged_data['s2calc_diff_close'], merged_data[column])
+    correlation_xy = correlation_matrix[0, 1]
+    r_squared = correlation_xy**2
+    p_value = stats.pearsonr(merged_data['s2calc_diff_close'], merged_data[column])[1]
+    print(f'Regression line for {column}: slope = {slope}, intercept = {intercept}, r^2 = {r_squared}, p-value = {p_value}')
     
-#     plt.xlabel('OP Difference', fontsize=24)
-#     plt.ylabel(column, fontsize=24)
-#     plt.xticks(rotation=45, fontsize=24)
-#     plt.yticks(fontsize=24)
-#     plt.tight_layout()
-#     plt.savefig(f'figure_out/scatter_s2calc_{column}_close.png', dpi=300)
-#     plt.close()
+    plt.xlabel('OP Difference', fontsize=24)
+    plt.ylabel(column, fontsize=24)
+    plt.xticks(rotation=45, fontsize=24)
+    plt.yticks(fontsize=24)
+    plt.tight_layout()
+    plt.savefig(f'figure_out/scatter_s2calc_{column}_close.png', dpi=300)
+    plt.close()
 
 
 for column in columns_to_plot:
@@ -138,22 +135,13 @@ for column in columns_to_plot:
     plt.yticks(fontsize=20)
     plt.tight_layout()
     safe_col = column.replace(" ", "")
-    print(safe_col)
     safe_col = safe_col.replace("/", "")
-    print('safe col:')
-    print(safe_col)
-    plt.savefig(f'figure_out/violin_{safe_col}_close.png', dpi=300)
+    plt.savefig(f'violin_{safe_col}_close.png', dpi=300)
     plt.close()
 
-    print(column)
-    print('CLOSE')
     # Calculate the 1st and 4th quartiles for the current column
     first_quartile = merged_data[column].quantile(0.25)
-    print('first quartile:')
-    print(first_quartile)
     fourth_quartile = merged_data[column].quantile(0.75)
-    print('fourth quartile:')
-    print(fourth_quartile)
 
     # Filter the PDBs in the first and fourth quartiles
     first_quartile_pdbs = merged_data[merged_data[column] <= first_quartile]['PDB']
@@ -177,12 +165,11 @@ for column in columns_to_plot:
     plt.xticks(rotation=45, fontsize=24)
     plt.yticks(fontsize=24)
     plt.tight_layout()
-    plt.savefig(f'figure_out/violin_s2calc_diff_close_{safe_col}.png', dpi=300)
+    plt.savefig(f'violin_s2calc_diff_close_{safe_col}.png', dpi=300)
     plt.close()
 
     # Calculate and output statistics
     stats_data = quartile_data.groupby('Quartile')['s2calc_diff_close'].describe()
-    print(stats_data)
 
     # Perform Mann-Whitney U test
     u_statistic, p_value = stats.mannwhitneyu(first_quartile_s2calc_diff, fourth_quartile_s2calc_diff, alternative='two-sided')
@@ -200,15 +187,10 @@ for column in columns_to_plot:
     plt.yticks(fontsize=20)
     plt.tight_layout()
     safe_col = column.replace(" ", "")
-    print(safe_col)
     safe_col = safe_col.replace("/", "")
-    print('safe col:')
-    print(safe_col)
     plt.savefig(f'figure_out/violin_{safe_col}_all.png', dpi=300)
     plt.close()
 
-    print(column)
-    print('ALL')
     # Calculate the 1st and 4th quartiles for the current column
     first_quartile = merged_data[column].quantile(0.25)
     fourth_quartile = merged_data[column].quantile(0.75)
@@ -240,7 +222,6 @@ for column in columns_to_plot:
 
     # Calculate and output statistics
     stats_data = quartile_data.groupby('Quartile')['s2calc_diff_all'].describe()
-    print(stats_data)
 
     # Perform Mann-Whitney U test
     u_statistic, p_value = stats.mannwhitneyu(first_quartile_s2calc_diff, fourth_quartile_s2calc_diff, alternative='two-sided')
@@ -273,75 +254,68 @@ plt.close()
 
 merged_data_lig = merged_data
 
-# Define clusters for altloc and noaltloc
-altloc_clusters = [0, 3, 5, 6, 9, 10, 13]
-merged_data_lig['altloc_label'] = merged_data_lig['Cluster'].apply(lambda x: 'Alt Loc' if x in altloc_clusters else 'No Alt Loc')
-merged_data['altloc_label'] = merged_data['Cluster'].apply(lambda x: 'Alt Loc' if x in altloc_clusters else 'No Alt Loc')
-alt_loc_count = merged_data_lig[merged_data_lig['altloc_label'] == 'Alt Loc'].shape[0]
-print(f"Number of entries with altloc_label == 'Alt Loc': {alt_loc_count}")
 
 
 # # Define columns to plot
-# columns_to_plot = ['s2calc_diff_all','s2calc_diff_close', 'MW', 'logP', 'Hbond_donor', 'Hbond_acceptor',
-#                     'LogD', 'Polar_SA', 'rotatable', 'Hbond_MW']  # Example columns, adjust as needed
+columns_to_plot = ['s2calc_diff_all','s2calc_diff_close', 'MW', 'logP', 'Hbond_donor', 'Hbond_acceptor',
+                    'LogD', 'Polar_SA', 'rotatable', 'Hbond_MW']  # Example columns, adjust as needed
 
-# # Plot violin plots for each column
-# for column in columns_to_plot:
-#     plt.figure(figsize=(12, 6))
-#     sns.violinplot(data=merged_data, x='altloc_label', y=column, inner=None)
-#     plt.ylabel(column, fontsize=24)
-#     plt.xlabel('')
-#     plt.xticks(rotation=45, fontsize=24)
-#     plt.yticks(fontsize=24)
-#     plt.tight_layout()
-#     plt.savefig(f'figure_out/violin_{column}_altloc_vs_noaltloc.png', dpi=300)
-#     plt.close()
-# # Perform statistical tests to compare 'altloc' vs 'noaltloc' for each column
-# for column in columns_to_plot:
-#     altloc_data = merged_data[merged_data['altloc_label'] == 'Alt Loc'][column]
-#     noaltloc_data = merged_data[merged_data['altloc_label'] == 'No Alt Loc'][column]
-#     # Calculate and print the mean and median for 'altloc' and 'noaltloc' data for each column
-#     altloc_mean = altloc_data.mean()
-#     altloc_median = altloc_data.median()
-#     noaltloc_mean = noaltloc_data.mean()
-#     noaltloc_median = noaltloc_data.median()
+# Plot violin plots for each column
+for column in columns_to_plot:
+    plt.figure(figsize=(12, 6))
+    sns.violinplot(data=merged_data, x='altloc_label', y=column, inner=None)
+    plt.ylabel(column, fontsize=24)
+    plt.xlabel('')
+    plt.xticks(rotation=45, fontsize=24)
+    plt.yticks(fontsize=24)
+    plt.tight_layout()
+    plt.savefig(f'figure_out/violin_{column}_altloc_vs_noaltloc.png', dpi=300)
+    plt.close()
+# Perform statistical tests to compare 'altloc' vs 'noaltloc' for each column
+for column in columns_to_plot:
+    altloc_data = merged_data[merged_data['altloc_label'] == 'Alt Loc'][column]
+    noaltloc_data = merged_data[merged_data['altloc_label'] == 'No Alt Loc'][column]
+    # Calculate and print the mean and median for 'altloc' and 'noaltloc' data for each column
+    altloc_mean = altloc_data.mean()
+    altloc_median = altloc_data.median()
+    noaltloc_mean = noaltloc_data.mean()
+    noaltloc_median = noaltloc_data.median()
     
-#     print(f'{column} - Altloc: Mean = {altloc_mean}, Median = {altloc_median}')
-#     print(f'{column} - No Altloc: Mean = {noaltloc_mean}, Median = {noaltloc_median}')
+    print(f'{column} - Altloc: Mean = {altloc_mean}, Median = {altloc_median}')
+    print(f'{column} - No Altloc: Mean = {noaltloc_mean}, Median = {noaltloc_median}')
     
-#     # Perform Mann-Whitney U test
-#     u_statistic, p_value = stats.mannwhitneyu(altloc_data, noaltloc_data, alternative='two-sided')
-#     print(f'Mann-Whitney U test for {column}: U statistic = {u_statistic}, p-value = {p_value}')
+    # Perform Mann-Whitney U test
+    u_statistic, p_value = stats.mannwhitneyu(altloc_data, noaltloc_data, alternative='two-sided')
+    print(f'Mann-Whitney U test for {column}: U statistic = {u_statistic}, p-value = {p_value}')
 
 
-# columns_to_plot = ['log_IC50', 'IC50']
-# for column in columns_to_plot:
-#     plt.figure(figsize=(12, 6))
-#     sns.violinplot(data=merged_data_lig, x='altloc_label', y=column, inner=None)
-#     plt.ylabel(column, fontsize=24)
-#     plt.xlabel('Altloc vs No Altloc', fontsize=24)
-#     plt.xticks(rotation=45, fontsize=24)
-#     plt.yticks(fontsize=24)
-#     plt.tight_layout()
-#     plt.savefig(f'figure_out/violin_{column}_altloc_vs_noaltloc.png', dpi=300)
-#     plt.close()
+columns_to_plot = ['log_IC50', 'IC50']
+for column in columns_to_plot:
+    plt.figure(figsize=(12, 6))
+    sns.violinplot(data=merged_data_lig, x='altloc_label', y=column, inner=None)
+    plt.ylabel(column, fontsize=24)
+    plt.xlabel('Altloc vs No Altloc', fontsize=24)
+    plt.xticks(rotation=45, fontsize=24)
+    plt.yticks(fontsize=24)
+    plt.tight_layout()
+    plt.savefig(f'figure_out/violin_{column}_altloc_vs_noaltloc.png', dpi=300)
+    plt.close()
 
-# for column in columns_to_plot:
-#     altloc_data = merged_data_lig[merged_data_lig['altloc_label'] == 'Alt Loc'][column]
-#     noaltloc_data = merged_data_lig[merged_data_lig['altloc_label'] == 'No Alt Loc'][column]
+for column in columns_to_plot:
+    altloc_data = merged_data_lig[merged_data_lig['altloc_label'] == 'Alt Loc'][column]
+    noaltloc_data = merged_data_lig[merged_data_lig['altloc_label'] == 'No Alt Loc'][column]
 
-#     altloc_mean = altloc_data.mean()
-#     altloc_median = altloc_data.median()
-#     noaltloc_mean = noaltloc_data.mean()
-#     noaltloc_median = noaltloc_data.median()
+    altloc_mean = altloc_data.mean()
+    altloc_median = altloc_data.median()
+    noaltloc_mean = noaltloc_data.mean()
+    noaltloc_median = noaltloc_data.median()
     
-#     print(f'{column} - Altloc: Mean = {altloc_mean}, Median = {altloc_median}')
-#     print(f'{column} - No Altloc: Mean = {noaltloc_mean}, Median = {noaltloc_median}')
+    print(f'{column} - Altloc: Mean = {altloc_mean}, Median = {altloc_median}')
+    print(f'{column} - No Altloc: Mean = {noaltloc_mean}, Median = {noaltloc_median}')
     
-#     # Perform Mann-Whitney U test
-#     u_statistic, p_value = stats.mannwhitneyu(altloc_data, noaltloc_data, alternative='two-sided')
-#     print(f'Mann-Whitney U test for {column}: U statistic = {u_statistic}, p-value = {p_value}')
-
+    # Perform Mann-Whitney U test
+    u_statistic, p_value = stats.mannwhitneyu(altloc_data, noaltloc_data, alternative='two-sided')
+    print(f'Mann-Whitney U test for {column}: U statistic = {u_statistic}, p-value = {p_value}')
 
 
 # Multiply every value in all_OP by 165
