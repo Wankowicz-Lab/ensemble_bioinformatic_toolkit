@@ -6,7 +6,7 @@ from pathlib import Path
 from math import log10
 
 # Load
-path = Path("RIN_diff_edges.xlsx")
+path = Path("RIN_diff_edges.csv")
 xls = pd.ExcelFile(path)
 sheet_names = xls.sheet_names
 df = pd.read_excel(path, sheet_name=0)
@@ -46,29 +46,14 @@ dir_counts = (sig.groupby(['cluster','direction']).size()
                 .reset_index())
 per_cluster_summary = by_cluster.merge(net_shift, on='cluster', how='left').merge(dir_counts, on='cluster', how='left').fillna(0)
 
-# Save tidy exports
-out_dir = Path("rin_edge_summaries")
-out_dir.mkdir(exist_ok=True, parents=True)
-df.to_csv(out_dir/"all_edges.csv", index=False)
-by_cluster.to_csv(out_dir/"per_cluster_counts.csv", index=False)
-per_cluster_summary.to_csv(out_dir/"per_cluster_summary.csv", index=False)
-strong.to_csv(out_dir/"strong_effect_edges_p_lt_0.05_absdelta_ge_0.5.csv", index=False)
-strong_top10.to_csv(out_dir/"top10_strong_edges.csv", index=False)
-
-# Show key tables to user
-import caas_jupyter_tools as cj
-cj.display_dataframe_to_user("Per-cluster summary (counts, fraction significant, net shift, direction counts)", per_cluster_summary)
-cj.display_dataframe_to_user("Top 10 strongest edges (|delta|≥0.5 & p<0.05)", strong_top10[['cluster','edge','freq_other','delta_freq','p_value_fisher_two_sided']])
-
 # Volcano-like plot: delta_freq vs -log10(p)
 plt.figure()
 plt.scatter(df['delta_freq'], df['neglog10_p'], s=10, alpha=0.6)
 plt.axvline(0, linestyle='--')
-plt.xlabel("Δ frequency (cluster − others)")
+plt.xlabel("Delta frequency (cluster − others)")
 plt.ylabel("−log10(p)")
-plt.title("Differential edge enrichment (all clusters)")
 plt.tight_layout()
-plt.savefig(out_dir/"volcano_all_clusters.png", dpi=200)
+plt.savefig("volcano_all_clusters.png", dpi=200)
 plt.show()
 
 # Bar plot: fraction of significant edges per cluster
@@ -78,7 +63,6 @@ plt.bar(by_cluster.set_index('cluster').loc[order].index.astype(str),
         by_cluster.set_index('cluster').loc[order]['frac_sig'])
 plt.xlabel("Cluster")
 plt.ylabel("Fraction of significant edges (p<0.05)")
-plt.title("Edge-level significance rate by cluster")
 plt.tight_layout()
 plt.savefig(out_dir/"fraction_significant_by_cluster.png", dpi=200)
 plt.show()
@@ -89,10 +73,9 @@ order2 = per_cluster_summary.sort_values('net_delta_sig', ascending=False)['clus
 plt.bar(per_cluster_summary.set_index('cluster').loc[order2].index.astype(str),
         per_cluster_summary.set_index('cluster').loc[order2]['net_delta_sig'])
 plt.xlabel("Cluster")
-plt.ylabel("Sum of Δ frequency (significant edges only)")
-plt.title("Directional net shift in edge frequency by cluster")
+plt.ylabel("Sum of delta frequency (significant edges only)")
 plt.tight_layout()
-plt.savefig(out_dir/"net_shift_by_cluster.png", dpi=200)
+plt.savefig("net_shift_by_cluster.png", dpi=200)
 plt.show()
 
 summary_notes
