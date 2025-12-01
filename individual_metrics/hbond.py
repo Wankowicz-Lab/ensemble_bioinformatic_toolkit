@@ -320,7 +320,7 @@ def build_graph(hbonds):
 
 # ------------------------- Pandas I/O -------------------------
 
-def write_hbond_csv_pandas(hbonds, outpath):
+def write_hbond_csv(hbonds, outpath):
     cols = ["donor_chain","donor_resi","donor_resname","donor_atom","donor_altloc",
             "acceptor_chain","acceptor_resi","acceptor_resname","acceptor_atom","acceptor_altloc",
             "DA_dist","angle","category"]
@@ -366,7 +366,7 @@ def analyze_single_pdb(pdb_path, outdir):
     G = build_graph(hb)
     os.makedirs(outdir, exist_ok=True)
     base = os.path.basename(pdb_path)
-    write_hbond_csv_pandas(hb, os.path.join(outdir, f"{base}_hbonds.csv"))
+    write_hbond_csv(hb, os.path.join(outdir, f"{base}_hbonds.csv"))
     write_residue_summary_pandas(G, os.path.join(outdir, f"{base}_residue_summary.csv"))
     print(f"[OK] {pdb_path}: {len(hb)} H-bonds; nodes={G.number_of_nodes()} edges={G.number_of_edges()}")
 
