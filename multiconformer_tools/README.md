@@ -1,4 +1,6 @@
-This folder contains scripts that can be used on multiconformer models. These models encode conformational heterogeneity using altlocs. If the PDB or mmCIF have multiple models, please use the ensemble scripts.
+This folder contains scripts to compare information across groups of PDBs. They mainly use outputs gathered from the individual metrics files. 
+
+The majority of scripts also expect a csv identifying PDB or structure IDs to Cluster. PDBs can be clustered in any way you want. 
 
 
 
