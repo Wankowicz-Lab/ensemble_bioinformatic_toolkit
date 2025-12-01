@@ -1,24 +1,7 @@
 #!/usr/bin/env python3
 
 """
-H-bond graph analysis + mechanistic water replaceability + PATHWAY DIFFERENCES.
-Outputs (new bits are marked [NEW]):
-  - per_pdb_graph_metrics.csv (+ mechanistic columns when waters included)
-  - per_pdb_node_centralities.csv
-  - cluster_graph_summary.csv
-  - top_central_residues_by_cluster.csv
-  - per_water_replaceability_scores.csv
-  - cluster_fraction_replaceable_waters.csv
-  - [NEW] per_pdb_shortest_paths.csv               # all P–L shortest paths (<= max_len)
-  - [NEW] per_pdb_edge_usage_from_paths.csv        # edges touched by any shortest path (binary)
-  - [NEW] cluster_edge_freq_from_paths.csv         # edge frequency per cluster
-  - [NEW] cluster_edge_differential.csv            # log2FC (+ FET q-values if SciPy)
-  - [NEW] cluster_path_motif_counts.csv            # motif counts per cluster
-  - [NEW] consensus_<Cluster>.graphml              # per-cluster consensus pathway graph
-  - Plots incl. differential edge heatmap, motif distributions
-
-Requirements: pandas, numpy, networkx, matplotlib, seaborn
-Optional: scipy (for fisher_exact + BH-FDR)
+H-bond graph analysis + mechanistic water replaceability 
 """
 
 from __future__ import annotations
@@ -29,13 +12,7 @@ import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 import seaborn as sns
-
-# Optional stats
-try:
-    from scipy.stats import fisher_exact
-    SCIPY_OK = True
-except Exception:
-    SCIPY_OK = False
+from scipy.stats import fisher_exact
 
 # Set font and figure params
 plt.rcParams.update({
@@ -54,7 +31,6 @@ boxplot_kwargs = dict({'boxprops': boxprops, 'medianprops': lineprops,
                        'whiskerprops': lineprops, 'capprops': lineprops,
                        'width': 0.75})
 
-# ----------------------------- Small helpers ---------------------------------
 
 AA3 = {
     "ALA","ARG","ASN","ASP","CYS","GLN","GLU","GLY","HIS","ILE",
@@ -69,8 +45,6 @@ def pdb_stem(name: str) -> str:
 
 def load_clusters(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path)
-    df["PDB"] = df["PDB"].apply(lambda x: Path(x).stem.replace("_refitted.pdbredist_norm_lig.pdb",""))
-    df["PDB"] = df["PDB"].str.replace('_qFit_refitted.pdbredist_norm_lig', '', regex=False)
     return df[["PDB","Cluster"]].drop_duplicates()
 
 def load_subset_list(path: Path | None) -> set | None:
@@ -99,7 +73,6 @@ def node_type_from_resname(resname: str, water_resnames: set[str]) -> str:
         return "PROTEIN"
     return "LIGAND"
 
-# ----------------------------- Graph building --------------------------------
 
 def build_graph(hb: pd.DataFrame,
                 subset: set | None,
@@ -112,7 +85,6 @@ def build_graph(hb: pd.DataFrame,
     """
     hb = hb.copy()
 
-    # Filter out waters unless requested
     if not include_waters:
         mask_d = ~hb["donor_resname"].astype(str).str.upper().isin(water_resnames)
         mask_a = ~hb["acceptor_resname"].astype(str).str.upper().isin(water_resnames)
@@ -123,7 +95,6 @@ def build_graph(hb: pd.DataFrame,
     hb["v"] = hb["acceptor_chain"].astype(str) + ":" + hb["acceptor_resi"].astype(str)
     hb = hb[hb["u"] != hb["v"]]
 
-    # Track which nodes are waters (useful for annotation)
     water_nodes = set()
     water_nodes.update(
         hb.loc[hb["donor_resname"].astype(str).str.upper().isin(water_resnames), "u"].tolist()
@@ -189,89 +160,6 @@ def node_centrality(G: nx.Graph) -> pd.DataFrame:
         "closeness": [clo[n] for n in G.nodes()],
     })
 
-# ---------------------- Mechanistic water analysis ----------------------------
-
-def water_bridge_table(G: nx.Graph, node_types: dict, hb_geo: pd.DataFrame | None = None) -> pd.DataFrame:
-    rows = []
-    if G.number_of_nodes()==0:
-        return pd.DataFrame(columns=[
-            "water_node","degree","weighted_degree","betweenness","closeness",
-            "clustering","is_articulation","nP","nL","nW","triangles",
-            "bridge_like","redundancy","replaceability_score"
-        ])
-    deg = dict(G.degree())
-    wdeg = dict(G.degree(weight="weight"))
-    btw = nx.betweenness_centrality(G, normalized=True)
-    clo = nx.closeness_centrality(G)
-    try:
-        clus = nx.clustering(G, weight=None)
-    except Exception:
-        clus = {n: np.nan for n in G.nodes()}
-    try:
-        arts = set(nx.articulation_points(G))
-    except Exception:
-        arts = set()
-
-    # optional geometry
-    geom_min_dist = {}
-    geom_max_angle = {}
-    if hb_geo is not None:
-        cols = set([c.lower() for c in hb_geo.columns])
-        dist_col = next((c for c in ["da_dist","distance","d_a_dist","donor_acceptor_dist"] if c in cols), None)
-        ang_col  = next((c for c in ["angle","dha_angle","donor_hydrogen_acceptor_angle"] if c in cols), None)
-
-        def node_series(side):
-            if side == "donor":
-                return hb_geo["donor_chain"].astype(str) + ":" + hb_geo["donor_resi"].astype(str)
-            return hb_geo["acceptor_chain"].astype(str) + ":" + hb_geo["acceptor_resi"].astype(str)
-
-        if dist_col:
-            for u in node_series("donor"):
-                if node_types.get(u)=="WATER":
-                    geom_min_dist[u] = min(geom_min_dist.get(u, np.inf), float('inf'))
-            for v in node_series("acceptor"):
-                if node_types.get(v)=="WATER":
-                    geom_min_dist[v] = min(geom_min_dist.get(v, np.inf), float('inf'))
-
-    for n in G.nodes():
-        if node_types.get(n) != "WATER":
-            continue
-        neigh = list(G.neighbors(n))
-        nP = sum(node_types.get(x)=="PROTEIN" for x in neigh)
-        nL = sum(node_types.get(x)=="LIGAND"  for x in neigh)
-        nW = sum(node_types.get(x)=="WATER"   for x in neigh)
-
-        triangles = 0
-        for i in range(len(neigh)):
-            for j in range(i+1, len(neigh)):
-                if G.has_edge(neigh[i], neigh[j]):
-                    triangles += 1
-
-        bridge_like = int(dict(G.degree())[n]==2 and ((nL==1 and nP==1) or (nP==2) or (nL==2)))
-        redundancy = clus.get(n, 0.0) if clus is not None else 0.0
-
-        replaceability = (
-            1.00*bridge_like +
-            0.75*(1.0 if dict(G.degree())[n]==2 else 0.0) +
-            0.50*nx.betweenness_centrality(G, normalized=True).get(n,0.0) -
-            0.75*(1.0 if n in arts else 0.0) -
-            0.50*min(1.0, redundancy)
-        )
-
-        rows.append(dict(
-            water_node=n,
-            degree=dict(G.degree())[n],
-            weighted_degree=dict(G.degree(weight="weight"))[n],
-            betweenness=nx.betweenness_centrality(G, normalized=True).get(n, np.nan),
-            closeness=nx.closeness_centrality(G).get(n, np.nan),
-            clustering=redundancy,
-            is_articulation=int(n in arts),
-            nP=nP, nL=nL, nW=nW, triangles=triangles,
-            bridge_like=bridge_like,
-            redundancy=redundancy,
-            replaceability_score=float(replaceability)
-        ))
-    return pd.DataFrame(rows)
 
 def count_water_motifs(G: nx.Graph, node_types: dict) -> dict:
     counts = dict(PWP=0, LWP=0, LWL=0, WWW_edges=0)
@@ -294,48 +182,6 @@ def count_water_motifs(G: nx.Graph, node_types: dict) -> dict:
     counts["WWW_edges"] //= 2
     return counts
 
-def simulate_water_removal_effects(G: nx.Graph, node_types: dict) -> dict:
-    prots = [n for n,t in node_types.items() if t=="PROTEIN" and n in G]
-    ligs  = [n for n,t in node_types.items() if t=="LIGAND"  and n in G]
-    if len(prots)==0 or len(ligs)==0 or G.number_of_edges()==0:
-        return dict(n_PL_paths_with_water=0, n_PL_paths_no_water=0,
-                    avg_PL_pathlen_with_water=np.nan, avg_PL_pathlen_no_water=np.nan)
-
-    n_paths_w, lens_w = 0, []
-    for p in prots:
-        for l in ligs:
-            if nx.has_path(G, p, l):
-                n_paths_w += 1
-                try:
-                    lens_w.append(nx.shortest_path_length(G, p, l))
-                except Exception:
-                    pass
-
-    nodes_noW = [n for n in G.nodes() if node_types.get(n)!="WATER"]
-    G_noW = G.subgraph(nodes_noW).copy()
-    n_paths_now, lens_now = 0, []
-    if G_noW.number_of_nodes()>0:
-        for p in prots:
-            if p not in G_noW: 
-                continue
-            for l in ligs:
-                if l not in G_noW:
-                    continue
-                if nx.has_path(G_noW, p, l):
-                    n_paths_now += 1
-                    try:
-                        lens_now.append(nx.shortest_path_length(G_noW, p, l))
-                    except Exception:
-                        pass
-
-    return dict(
-        n_PL_paths_with_water=n_paths_w,
-        n_PL_paths_no_water=n_paths_now,
-        avg_PL_pathlen_with_water=(np.mean(lens_w) if lens_w else np.nan),
-        avg_PL_pathlen_no_water=(np.mean(lens_now) if lens_now else np.nan)
-    )
-
-# ----------------------- PATHWAY extraction & diffs ---------------------------
 
 def path_type_sequence(path, node_types):
     """Compress a node path to a type motif, e.g. ['P','W','P','L']."""
@@ -377,7 +223,6 @@ def shortest_PL_paths(G: nx.Graph, node_types: dict, max_len: int = 6):
                 ))
     return rows
 
-# ----------------------------- Plotting helpers ------------------------------
 
 def save_bar(df: pd.DataFrame, xcol: str, ycol: str, title: str, path: Path):
     d = df.sort_values(ycol, ascending=False)
@@ -414,21 +259,15 @@ def save_heatmap(matrix: np.ndarray, yticks, xticks, title: str, path: Path, cba
         g.fig.suptitle(title)
         plt.savefig(path, dpi=300, bbox_inches='tight'); plt.close()
 
-# ---------------------------------- Main -------------------------------------
 
 def main():
     ap = argparse.ArgumentParser(description="H-bond graph analysis + mechanistic waters + pathway diffs.")
     ap.add_argument("--hbond_dir", required=True, help="Folder with *_hbonds.csv")
-    ap.add_argument("--clusters_csv", required=True, help="HBDScan_clusters_3ormore_normpdb.csv")
+    ap.add_argument("--clusters_csv", required=True, help="HBDScan_clusters.csv")
     ap.add_argument("--outdir", default="hbond_graph_results_paths")
     ap.add_argument("--subset_residues", default=None, help="Txt file with residues like 'A:5' (optional)")
-    ap.add_argument("--subset_residues_by_cluster", default=None, help="CSV Cluster,res (optional)")
-    # Waters & paths
     ap.add_argument("--include_waters", action="store_true", help="Include water molecules as nodes")
     ap.add_argument("--max_path_len", type=int, default=6, help="Max hops for shortest P–L paths")
-    # RMSF (optional)
-    ap.add_argument("--rmsf_csv", default="avg_delta_rmsf.csv",
-                    help="Optional CSV with columns PDB_ensemble or PDB, delta_RMSF")
     args = ap.parse_args()
 
     hbond_dir = Path(args.hbond_dir)
@@ -778,10 +617,6 @@ def main():
                      clust_sum["Cluster"], np.full(len(clust_sum), 30),
                      outdir/"conn_vs_pathlen.png")
 
-        d = clust_sum.sort_values("n_components", ascending=True)
-        save_bar(d, "Cluster", "n_components",
-                 "# Connected Components by Cluster",
-                 outdir/"components_by_cluster.png")
 
         metrics = ["n_nodes","n_edges","density","n_components","giant_component_size",
                    "avg_clustering","avg_shortest_path_len_gc","algebraic_connectivity_gc"]
@@ -811,50 +646,6 @@ def main():
             plt.savefig(outdir/"cluster_metric_heatmap.png", bbox_inches="tight", dpi=300)
             plt.close()
 
-    # ------------------------------ RMSF option --------------------------------
-    rmsf_path = Path(args.rmsf_csv)
-    if rmsf_path.exists() and not graph_df.empty:
-        try:
-            rmsf_df = pd.read_csv(rmsf_path)
-            if "PDB" not in rmsf_df.columns and "PDB_ensemble" in rmsf_df.columns:
-                rmsf_df["PDB"] = rmsf_df["PDB_ensemble"]
-            if "delta_RMSF" not in rmsf_df.columns:
-                raise ValueError("RMSF CSV must contain 'delta_RMSF'")
-
-            cluster_rmsf = (graph_df.merge(rmsf_df[["PDB","delta_RMSF"]], on="PDB", how="left")
-                            .groupby("Cluster")["delta_RMSF"].mean()
-                            .rename("avg_delta_RMSF"))
-            cluster_metrics = graph_df.groupby("Cluster").agg({
-                "n_nodes": "mean",
-                "n_edges": "mean",
-                "density": "mean",
-                "n_components": "mean",
-                "giant_component_size": "mean",
-                "avg_clustering": "mean",
-                "avg_shortest_path_len_gc": "mean",
-                "algebraic_connectivity_gc": "mean"
-            })
-            corr_df = cluster_metrics.merge(cluster_rmsf, left_index=True, right_index=True)
-
-            correlations = {}
-            for metric in cluster_metrics.columns:
-                mask = ~(corr_df[metric].isna() | corr_df["avg_delta_RMSF"].isna())
-                if mask.sum() > 1:
-                    r = np.corrcoef(corr_df.loc[mask, metric], corr_df.loc[mask, "avg_delta_RMSF"])[0,1]
-                    correlations[metric] = r
-                    plt.figure(figsize=(6,5))
-                    plt.scatter(corr_df.loc[mask, metric], corr_df.loc[mask, "avg_delta_RMSF"])
-                    plt.xlabel(metric); plt.ylabel("Average ΔRMSF")
-                    plt.title(f"Correlation: r = {r:.3f}")
-                    plt.tight_layout()
-                    plt.savefig(outdir/f"rmsf_corr_{metric}.png", dpi=300, bbox_inches="tight")
-                    plt.close()
-
-            pd.Series(correlations).to_csv(outdir/"rmsf_metric_correlations.csv")
-        except Exception as e:
-            print(f"[RMSF] Skipped due to error: {e}")
-
-    print("Done.")
-
+    
 if __name__ == "__main__":
     main()
