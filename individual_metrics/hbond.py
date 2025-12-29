@@ -440,8 +440,7 @@ def analyze_single_pdb(pdb_path, outdir):
     base = os.path.basename(pdb_path)
     write_hbond_csv(hb, os.path.join(outdir, f"{base}_hbonds.csv"))
     write_residue_summary_pandas(G, os.path.join(outdir, f"{base}_residue_summary.csv"))
-    print(f"[OK] {pdb_path}: {len(hb)} H-bonds; nodes={G.number_of_nodes()} edges={G.number_of_edges()}")
-
+    
 def main():
     ap = argparse.ArgumentParser(description="Altloc-aware hydrogen-bond network analysis for a single PDB/mmCIF (Biotite).")
     ap.add_argument("--pdb", required=True, help="Path to PDB/mmCIF file.")
