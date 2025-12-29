@@ -10,7 +10,6 @@ import networkx as nx
 
 from biotite.structure import AtomArray, filter_amino_acids
 from biotite.structure.io.pdb import PDBFile
-from biotite.structure.io.mmcif import MMCIFFile
 
 
 # ----------------------------- Tunables --------------------------------------
@@ -72,15 +71,88 @@ def altloc_compatible(d_alt, a_alt):
 
 # ------------------------- Biotite utilities ---------------------------
 
-def load_structure_any(path) -> AtomArray:
+def load_structure_any(path):
+    """
+    Load structure and return (AtomArray, altloc_array) tuple.
+    altloc_array is a numpy array of altloc characters, one per atom.
+    """
     ext = os.path.splitext(path)[1].lower()
     if ext in (".cif", ".mmcif"):
         mm = MMCIFFile.read(path)
-        arr = mm.get_structure(model=1, extra_fields=["b_factor", "occupancy", "altloc_id"])
+        arr = mm.get_structure(model=1, extra_fields=["b_factor", "occupancy"])
+        # Extract altloc from mmCIF file
+        altloc_data = _extract_altloc_mmcif(mm, arr.array_length())
     else:
         pdb = PDBFile.read(path)
-        arr = pdb.get_structure(model=1, extra_fields=["b_factor", "occupancy", "altloc_id"])
-    return arr
+        arr = pdb.get_structure(model=1, extra_fields=["b_factor", "occupancy"])
+        # Extract altloc from PDB file
+        altloc_data = _extract_altloc_pdb(path, arr.array_length())
+    
+    # Convert to numpy array for easy indexing
+    altloc_array = np.array(altloc_data, dtype='U1')
+    return arr, altloc_array
+
+def _extract_altloc_pdb(pdb_path, n_atoms):
+    """Extract altloc information from PDB file by parsing ATOM/HETATM lines."""
+    altloc_data = []
+    try:
+        with open(pdb_path, 'r') as f:
+            atom_count = 0
+            for line in f:
+                if line.startswith(('ATOM  ', 'HETATM')):
+                    if atom_count < n_atoms:
+                        # Altloc is at column 16 (0-indexed) in PDB format
+                        altloc_char = line[16] if len(line) > 16 else ' '
+                        altloc_data.append(altloc_char.strip())
+                        atom_count += 1
+        # Pad if we didn't get enough atoms
+        while len(altloc_data) < n_atoms:
+            altloc_data.append('')
+    except Exception:
+        # If parsing fails, return empty altlocs
+        altloc_data = [''] * n_atoms
+    return altloc_data[:n_atoms]
+
+def _extract_altloc_mmcif(mm, n_atoms):
+    """Extract altloc information from mmCIF file."""
+    altloc_data = []
+    try:
+        # Try multiple methods to access mmCIF data
+        # Method 1: Direct access to _data attribute
+        if hasattr(mm, '_data'):
+            data = mm._data
+            if isinstance(data, dict) and 'atom_site' in data:
+                atom_site = data['atom_site']
+                # Try label_alt_id (standard mmCIF field)
+                if 'label_alt_id' in atom_site:
+                    altloc_list = atom_site['label_alt_id']
+                    for i in range(min(n_atoms, len(altloc_list))):
+                        val = str(altloc_list[i]).strip() if altloc_list[i] else ''
+                        altloc_data.append('' if val in ('?', '.', '') else val)
+                # Try auth_alt_id as fallback
+                elif 'auth_alt_id' in atom_site:
+                    altloc_list = atom_site['auth_alt_id']
+                    for i in range(min(n_atoms, len(altloc_list))):
+                        val = str(altloc_list[i]).strip() if altloc_list[i] else ''
+                        altloc_data.append('' if val in ('?', '.', '') else val)
+        
+        # Method 2: Try accessing through get_structure with altloc parameter
+        if not altloc_data:
+            try:
+                # Some biotite versions support altloc parameter
+                altloc_struct = mm.get_structure(model=1, altloc="all")
+                if hasattr(altloc_struct, 'alt_loc_id'):
+                    altloc_data = [str(x).strip() if x else '' for x in altloc_struct.alt_loc_id[:n_atoms]]
+            except:
+                pass
+        
+        # Pad if needed
+        while len(altloc_data) < n_atoms:
+            altloc_data.append('')
+    except Exception:
+        # If extraction fails, return empty altlocs
+        altloc_data = [''] * n_atoms
+    return altloc_data[:n_atoms]
 
 def split_by_residue(arr: AtomArray):
     if arr.array_length() == 0:
@@ -169,11 +241,11 @@ def donor_acceptor_templates(resname, names_set):
 
 # ----------------------- Site building (keep altlocs) -----------------------
 
-def _index_by_name_alt(arr: AtomArray, idxs):
+def _index_by_name_alt(arr: AtomArray, idxs, altloc_array):
     d = defaultdict(dict)
     for i in idxs:
         name = arr.atom_name[i].strip()
-        alt = norm_alt(arr.altloc_id[i])
+        alt = norm_alt(altloc_array[i] if i < len(altloc_array) else '')
         d[name][alt] = i
     return d
 
@@ -197,7 +269,7 @@ def _pick_base(name_to_alt_to_idx, base_name, donor_alt):
         return base_name, '', d['']
     return None, None, None
 
-def build_sites_biotite(arr: AtomArray):
+def build_sites_biotite(arr: AtomArray, altloc_array):
     prot_mask = filter_amino_acids(arr)
     donors, acceptors = [], []
 
@@ -206,7 +278,7 @@ def build_sites_biotite(arr: AtomArray):
         if not residue_ok(resname, is_protein):
             continue
 
-        name_to_alt = _index_by_name_alt(base_arr, idxs)
+        name_to_alt = _index_by_name_alt(base_arr, idxs, altloc_array)
         names_set = set(name_to_alt.keys())
         dtempl, atempl = donor_acceptor_templates(resname, names_set)
 
@@ -360,8 +432,8 @@ def write_residue_summary_pandas(G, outpath):
 # -------------------------- Main --------------------------
 
 def analyze_single_pdb(pdb_path, outdir):
-    arr = load_structure_any(pdb_path)
-    donors, acceptors = build_sites_biotite(arr)
+    arr, altloc_array = load_structure_any(pdb_path)
+    donors, acceptors = build_sites_biotite(arr, altloc_array)
     hb = detect_hbonds(donors, acceptors)
     G = build_graph(hb)
     os.makedirs(outdir, exist_ok=True)
