@@ -12,8 +12,8 @@ import os
 from glob import glob
 
 # === CONFIG ===
-JSON_DIR = "/panfs/accrepfs.vampire/data/wankowicz_lab/ellas/freesasa_per_atom"
-CSV_DIR = "/panfs/accrepfs.vampire/data/wankowicz_lab/ellas/freesasa_per_atom_csv"
+JSON_DIR = "freesasa_per_atom"
+CSV_DIR = "freesasa_per_atom_csv"
 
 
 def parse_freesasa_json(json_file, output_csv):
