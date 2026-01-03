@@ -5,7 +5,7 @@ import os
 
 # Ensure two arguments are provided (the paths to the two PDB files)
 if len(sys.argv) != 3:
-    print("Usage: pymol_rmsd.py <structure_1.pdb> <structure_2.pdb>")
+    print("Usage: alpha_carbon_rmsd.py <structure_1.pdb> <structure_2.pdb>")
     sys.exit(1)
 
 # Load the structures into PyMOL
